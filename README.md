@@ -1,39 +1,41 @@
-# Stand alone DAQInterface library
+# Stand-alone DAQInterface library
 
 This code provides an interface library to the SQL databases, monitoring and slow control systems. 
 
+# Installation
 
-# Instalation
-
-To get dependencies (boost and ZMQ):
+To install the required dependencies run:
 
       ./GetDepenencies.sh
 
-Or if you already have them you can change the Makefile paths to point to your local copt of ZMQ & Boost 
+This will install ZMQ, Boost, ToolFramework and ToolDAQFramework in `./Dependencies`. 
+Or if you already have them you can change the Makefile paths to point to your existing local copies. 
 
-To compile run:
+After installing dependencies run:
 
       make
 
-This will produce:
+to compile. This will produce:
 
-    1) The DAQ Interface shared object library (lib/LibDAQInterface.so) that can be used in your stand alone code:
-    2) An Example program demonstraiting the interfaces usage (see Example.cpp)
-    3) A command line remote control package for sending slow control commands (RemoteControl)
-    4) A Windows and MacOS interface translation program (Win_Mac_translation)
+    1) The DAQ Interface shared object library (lib/libDAQInterface.so) that can be used with your own stand alone code
+    2) An Example application (Example/Example) demonstrating the interface usage (source code: Example/Example.cpp)
+    3) A command line remote control application (RemoteControl) for sending slow control commands
+    4) A Windows and MacOS interface translation application (Win_Mac_translation)
 
 
 # Usage/Execution
 
-To use the DAQ library in your own standalone program include the header in your code 
+To use the DAQ Interface library in your own standalone program include the header in your code 
   
     #include <DAQInterface.h>
 
-and compile with g++ yourprogram.cpp -o yourprogram -I <path to repo>/include -L <path to repo>/lib -lDAQInterface
+and compile with 
 
-For detials of the interface see inlcude/DAQInterface.h and for an example please read Example.cpp
+    g++ yourprogram.cpp -o yourprogram -I <path to repo>/include -L <path to repo>/lib -lDAQInterface
 
-To execute add <path to repo>/lib to your LD_LIBRARY_PATH or
+For a list of functions provided by the interface see `include/DAQInterface.h`, and for example usage refer to `Example/Example.cpp`
+
+Before executing, configure your environment by calling:
 
     source Setup.sh
 
@@ -45,6 +47,23 @@ To run the example:
     source Setup.sh
     ./Example
 
-Note: If your using Windows or MacOS and web server is running in a container on the same computer as your stand alone application, which is running on the host OS. Then due to the limitations of the networking on docker desktop on those platforms, you will need to first run the Win_Mac_translation application in the background for the features to work
+**Note: For Windows or MacOS Users running the web server in a Docker container, and the client application on the same machine directly in the host OS.**
+Due to networking limitations with Docker you will need to run the `Win_Mac_translation` application in the background on the host OS, before starting the standalone client application:
 
     ./Win_Mac_translation &
+
+# Using the DAQInterface library in Python
+
+With [cppyy](https://github.com/wlav/cppyy) it's possible to import the `DAQInterface` class into python with virtually seamless integration. An example python script is provided in `Example/Example.py`, which closely mirrors the c++ example to demonstrate the equivalence in use from the two languages.
+
+As cppyy is part of the standard python bindings used by ROOT it comes with all recent ROOT versions, so the simplest way to install cppyy is to install ROOT.
+After following the normal installation steps, python support can therefore be added by invoking:
+
+    ./GetDependencies.sh --python
+
+which will install a recent ROOT version (6.24 or 6.28, depending on your compiler) into `./Dependencies`, with the necessary components enabled.
+From there, you can run
+
+      python3 Example/Example.py
+
+to run the example python client.
