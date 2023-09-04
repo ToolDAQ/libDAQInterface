@@ -168,8 +168,8 @@ bool PGClient::InitZMQ(){
 	// 2. [DEALER] one for sending read queries round-robin and receving responses
 	
 	// specify the ports everything talks/listens on
-	clt_pub_port = 77778;   // for sending write queries
-	clt_dlr_port = 77777;   // for sending read queries
+	clt_pub_port = 55556;   // for sending write queries
+	clt_dlr_port = 55555;   // for sending read queries
 	// socket timeouts, so nothing blocks indefinitely
 	int clt_pub_socket_timeout=500;
 	int clt_dlr_socket_timeout=500;  // both send and receive

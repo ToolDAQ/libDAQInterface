@@ -1,7 +1,7 @@
 verbosity 1
 ZMQ_IDENTITY newdaq01
-clt_pub_port 77778
-clt_dlr_port 77777
+clt_pub_port 55556
+clt_dlr_port 55555
 clt_pub_socket_timeout 500
 clt_dlr_socket_timeout 500
 inpoll_timeout 50   # keep these short!

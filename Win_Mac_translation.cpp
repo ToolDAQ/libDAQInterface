@@ -11,7 +11,7 @@ int main(){
 
   zmq::context_t context(1);
 
-  ServiceDiscovery SD(false,true,77777 , "239.192.1.1", 5000, &context, boost::uuids::random_generator()(), "Win_Mac_translation", 5, 60);
+  ServiceDiscovery SD(false,true,55555 , "239.192.1.1", 5000, &context, boost::uuids::random_generator()(), "Win_Mac_translation", 5, 60);
 
 
     boost::uuids::uuid m_UUID=boost::uuids::random_generator()();
