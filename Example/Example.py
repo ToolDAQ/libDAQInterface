@@ -8,15 +8,9 @@ import ctypes
 # streamline accessing std namespace
 std = cppyy.gbl.std
 # pull in classes from the libDAQInterface
-cppyy.add_include_path('include')
-cppyy.add_include_path('Dependencies/boost_1_66_0/install/include')
-cppyy.add_include_path('Dependencies/zeromq-4.0.7/include')
-cppyy.add_include_path('Dependencies/ToolDAQFramework/include')
-cppyy.add_include_path('Dependencies/ToolFrameworkCore/include')
-cppyy.include('DAQInterface.h')
-cppyy.include('SlowControlElement.h')
-cppyy.load_library('libDAQInterface.so')
-from cppyy.gbl import DAQInterface
+cppyy.load_reflection_info('libDAQInterfaceClassDict')
+from cppyy.gbl import ToolFramework
+from cppyy.gbl.ToolFramework import DAQInterface
 
 class AutomatedFunctions:
   DAQ_inter = 0
@@ -26,13 +20,13 @@ class AutomatedFunctions:
     self.DAQ_inter = iDAQ_inter
     self.name = iname
   
-  def new_event_func(self, event_name: str) -> None:
-    print("new_event_func triggered for event ",event_name)
-    self.DAQ_inter.SendLog(self.name+" received a trigger for event "+event_name)
+  def new_event_func(self, event_name: str, event_payload: str) -> None:
+    print("new_event_func fired for event ",event_name)
+    self.DAQ_inter.SendLog(self.name+" received an alert for event "+event_name)
     # add your desired actions on new_event here
-    # if this function is subscribed to multiple triggers, you can use event_name
+    # if this function is subscribed to multiple alerts, you can use event_name
     # to determine the appropriate actions to take
-    # return type for TriggerSubscribe functions is void (no return value)
+    # return type for AlertSubscribe functions is void (no return value)
   
   def start_func(self, control_name: str) -> str:
     self.DAQ_inter.SendLog(self.name," received start signal")
@@ -65,7 +59,7 @@ if __name__ == "__main__":
   
   print("Initialising daqinterface")
   # initialise DAQInterface
-  DAQ_inter = cppyy.gbl.DAQInterface()
+  DAQ_inter = DAQInterface()
   DAQ_inter.Init(device_name, PGClient_configfile, database_name)
   automated_functions = AutomatedFunctions(DAQ_inter, device_name)
   
@@ -85,23 +79,23 @@ if __name__ == "__main__":
   # and the logging source will be the device name we passed to the DAQInterface constructor
   DAQ_inter.SendLog("normal message")
   # the signature for sending alarms is the same as logging messages
-  DAQ_inter.SendAlarm("High current on channel 3", device_name)
+  DAQ_inter.SendAlarm("High current on channel 3", 0, device_name)
   
   ###############################################################
   #######        registering subscriber functions         #######
   ###############################################################
   
-  print("Testing TriggerSubscribe")
+  print("Testing AlertSubscribe")
   # we can register functions to be invoked in response to a broadcast event,
   # such as the start of a new run or when the program state changes (an example is given later).
-  # we register a function with the DAQInterface::TriggerSubscribe method.
+  # we register a function with the DAQInterface::AlertSubscribe method.
   # for python we must pass a variable assigned to the desired function,
   # and that variable must still be in scope at any time it may be invoked.
   # i.e. we cannot pass 'automated_functions.new_event_func' directly as per:
-  #DAQ_inter.TriggerSubscribe("new_event", automated_functions.new_event_func)
+  #DAQ_inter.AlertSubscribe("new_event", automated_functions.new_event_func)
   # but instead we must do this:
   new_event_func_ref = automated_functions.new_event_func
-  DAQ_inter.TriggerSubscribe("new_event", new_event_func_ref)
+  DAQ_inter.AlertSubscribe("new_event", new_event_func_ref)
   
   ###############################################################
   #######           registering slow controls             #######
@@ -111,35 +105,37 @@ if __name__ == "__main__":
   # We can register controls associated with our service via the DAQ_inter.sc_vars.Add method
   # this takes a control name and type, as a minimum.
   # available types are: { BUTTON, VARIABLE, OPTIONS, COMMAND, INFO }
-  DAQ_inter.sc_vars.Add("Info",cppyy.gbl.INFO)
+  DAQ_inter.sc_vars.Add("Info",cppyy.gbl.ToolFramework.INFO)
   
   # Use DAQ_inter.sc_vars["ControlName"] to access a SlowControlElement.
   # Use the SetValue method of a control to update its value displayed on the webpage
   DAQ_inter.sc_vars["Info"].SetValue(" hello this is an information message ,.!{}[]<>?/`~'@\" ")
   
   # Typical controls might include buttons for starting, stopping and quitting a service
-  DAQ_inter.sc_vars.Add("Start",cppyy.gbl.BUTTON)
+  DAQ_inter.sc_vars.Add("Start",cppyy.gbl.ToolFramework.BUTTON)
   DAQ_inter.sc_vars["Start"].SetValue(False)
   
-  DAQ_inter.sc_vars.Add("Stop",cppyy.gbl.BUTTON)
+  DAQ_inter.sc_vars.Add("Stop",cppyy.gbl.ToolFramework.BUTTON)
   DAQ_inter.sc_vars["Stop"].SetValue(False)
   
-  DAQ_inter.sc_vars.Add("Quit",cppyy.gbl.BUTTON)
+  DAQ_inter.sc_vars.Add("Quit",cppyy.gbl.ToolFramework.BUTTON)
   DAQ_inter.sc_vars["Quit"].SetValue(False)
   
   # We can make a radio button control with the OPTIONS control type
-  DAQ_inter.sc_vars.Add("power_on",cppyy.gbl.OPTIONS)
+  DAQ_inter.sc_vars.Add("power_on",cppyy.gbl.ToolFramework.OPTIONS)
   DAQ_inter.sc_vars["power_on"].AddOption("1")
   DAQ_inter.sc_vars["power_on"].AddOption("0")
   DAQ_inter.sc_vars["power_on"].SetValue("0")
   
   # we can add variable controls with the VARIABLE control type
   # this additionally takes a range and step size
-  DAQ_inter.sc_vars.Add("voltage_1", cppyy.gbl.VARIABLE)
+  DAQ_inter.sc_vars.Add("voltage_1", cppyy.gbl.ToolFramework.VARIABLE)
   DAQ_inter.sc_vars["voltage_1"].SetMin(0)
   DAQ_inter.sc_vars["voltage_1"].SetMax(5000)
   DAQ_inter.sc_vars["voltage_1"].SetStep(0.1)
-  DAQ_inter.sc_vars["voltage_1"].SetValue(3500.5)
+  DAQ_inter.sc_vars["voltage_1"].SetValue['float'](3500.5)
+  
+  
   
   ###############################################################
   #######           querying control values               #######
@@ -161,7 +157,7 @@ if __name__ == "__main__":
   # whenever a control value is changed. This enables us to act on changes when they happen
   # without the need to constantly poll the DAQInterface to identify when something changes.
   change_voltage_ref = automated_functions.change_voltage
-  DAQ_inter.sc_vars.Add("voltage_2", cppyy.gbl.VARIABLE, change_voltage_ref)
+  DAQ_inter.sc_vars.Add("voltage_2", cppyy.gbl.ToolFramework.VARIABLE, change_voltage_ref)
   DAQ_inter.sc_vars["voltage_2"].SetMin(0)
   DAQ_inter.sc_vars["voltage_2"].SetMax(5000)
   DAQ_inter.sc_vars["voltage_2"].SetStep(10)
@@ -174,14 +170,14 @@ if __name__ == "__main__":
   # configuration entries are uniquely identified by a pair of {device name, version number}
   # and are represented in the database as JSON strings. To query for this device's configuration:
   print("Querying DB")
-  version=0
+  version=-1  # use version -1 to get the latest version
   config_json=std.string("")
   ok = DAQ_inter.GetConfig(config_json, version)
   
   # a Store class instance can parse a JSON string to more easily access settings
   # and can generate a JSON string from contents set by a series of simple 'Set' calls
   # so is useful both for reading and writing configuration entries
-  configuration = cppyy.gbl.Store()
+  configuration = cppyy.gbl.ToolFramework.Store()
   
   # local variables to retain current values
   power_on = ctypes.c_bool()
@@ -204,14 +200,13 @@ if __name__ == "__main__":
     
     # uplaod configuration to the database
     print("sending new config_json: '",config_json,"'")
-    DAQ_inter.SendConfig(config_json, "DemoAuthor")
+    DAQ_inter.SendConfig(config_json, "DemoAuthor", "Demo Description")
     
   else:
     
     print("Parsing query response")
     # we got a configuration JSON string. Parse it with the Store class
-    config_json = config_json.substr(9,config_json.length()-11)
-    print("received config json: '",config_json,"'")
+    print("got config JSON: '",config_json,"'")
     configuration.JsonParser(config_json)
     
     # print the configuration
@@ -220,13 +215,13 @@ if __name__ == "__main__":
     # retrieve the configuration variables and use them to set initial control values
     configuration.Get("power_on", power_on)
     DAQ_inter.sc_vars["power_on"].SetValue(power_on)
-    DAQ_inter.sc_vars["voltage_1"].SetValue(configuration.Get['float']("voltage_1"))
+    DAQ_inter.sc_vars["voltage_1"].SetValue['float'](configuration.Get['float']("voltage_1"))
     
     # if the Store does not contain a given key
     # (i.e. no corresponding setting was in the database configuration entry)
     # the Store::Get method will return False
     if configuration.Get("voltage_2", voltage_2) == True:
-      DAQ_inter.sc_vars["voltage_2"].SetValue(voltage_2)
+      DAQ_inter.sc_vars["voltage_2"].SetValue['float'](voltage_2)
     else:
       # use a default value if no setting is available
       voltage_2 = 2000
@@ -241,7 +236,7 @@ if __name__ == "__main__":
   print("main loop")
   # We'll use a Store to accumulate monitoring data
   # and convert to json to send to the webpage for plotting
-  monitoring_data = cppyy.gbl.Store()
+  monitoring_data = cppyy.gbl.ToolFramework.Store()
   
   running = True
   DAQ_inter.sc_vars["Status"].SetValue("Ready")
@@ -259,9 +254,9 @@ if __name__ == "__main__":
       # update the status control to indicate our new program state
       DAQ_inter.sc_vars["Status"].SetValue("Running")
       
-      # trigger all functions subscribed to the 'new_event' signal
-      print("sending 'new_event' trigger")
-      DAQ_inter.sc_vars.TriggerSend("new_event")
+      # fire all functions subscribed to the 'new_event' signal
+      print("sending 'new_event' alert")
+      DAQ_inter.sc_vars.AlertSend("new_event")
       
       # reset the 'Start' button, so that we can accept new presses
       DAQ_inter.sc_vars["Start"].SetValue(False)
@@ -316,9 +311,9 @@ if __name__ == "__main__":
       #power_on = DAQ_inter.sc_vars["power_on"].GetValue['bool'](); # or this
       if not power_on:
         if DAQ_inter.sc_vars["voltage_1"].GetValue['bool']():
-          DAQ_inter.sc_vars["voltage_1"].SetValue(0.0)
+          DAQ_inter.sc_vars["voltage_1"].SetValue['float'](0.0)
         if DAQ_inter.sc_vars["voltage_2"].GetValue['bool']():
-          DAQ_inter.sc_vars["voltage_2"].SetValue(0.0)
+          DAQ_inter.sc_vars["voltage_2"].SetValue['float'](0.0)
       
       # voltage_2 is changed automatically via automated_functions.voltage_change
       # but here is an example for voltage_1 of doing it manually:

@@ -1,0 +1,25 @@
+FROM web_base
+
+RUN cd / \
+    && git clone https://github.com/ToolDAQ/libDAQInterface.git /web \
+    && . Setup.sh \
+    && make clean \
+    && make
+
+RUN cd /opt/ \
+    wget https://root.cern/download/root_v6.26.04.source.tar.gz \
+    && yum install -y libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel libuuid-devel \
+    && tar -xzf root_v6.26.04.source.tar.gz \
+    && rm root_v6.26.04.source.tar.gz \
+    && mv root_v6.26.04 root_v6.26.04_src \
+    && mkdir root_v6.26.04_build \
+    && mkdir root_v6.26.04 \
+    && cd root_v6.26.04_build \
+    && cmake -DCMAKE_INSTALL_PREFIX=/opt/root_v6.26.04 -Dgminimal=ON -Dpyroot=ON -Dxrootd=OFF -Dbuiltin_xrootd=OFF  ../root_v6.26.04_src/ \
+    && cmake --build . --target install -j$(nproc --all) \
+    && cd /opt/ \
+    && rm -rf root_v6.26.04_src \
+    && rm -rf root_v6.26.04_build \
+    && echo '. ${Dependencies}/root_v6.26.04/bin/thisroot.sh' >> /web/Setup.sh
+
+CMD /bin/bash -c "cd /web && . Setup.sh && ./Example"

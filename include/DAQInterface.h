@@ -5,27 +5,26 @@
 #include <zmq.hpp>
 #include <iostream>
 #include <string>
+#include <thread>
+#include <chrono>
+#include <functional>
 #include <SlowControlCollection.h>
 #include <boost/uuid/uuid.hpp>            // uuid class
 #include <boost/uuid/uuid_generators.hpp> // generators
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/progress.hpp>
-#include <PGClient.h>
-#include <functional>
+#include <SlowControlClient.h>
 
-///removing header to pass into store
-//   config_json.replace(0,9,"");
-//    config_json.replace(config_json.end()-2, config_json.end(),"");
-
+namespace ToolFramework {
 
 class DAQInterface{
 
- private: 
+ private:
 
   zmq::context_t m_context;
   ServiceDiscovery* mp_SD;
-  PGClient m_pgclient;
+  SlowControlClient m_scclient;
   std::string m_dbname;
   std::string m_name;
 
@@ -33,13 +32,24 @@ class DAQInterface{
 
   DAQInterface();
   ~DAQInterface();
-  bool Init(std::string name, std::string pg_client_configfile, std::string db_name);
-  bool SQLQuery(std::string dbname, std::string query_string, std::string &result, int &timeout, std::string& err);
-  bool SendLog(std::string message, int severity=2, std::string source="");
-  bool SendAlarm(std::string message, std::string type, std::string source="");
-  bool SendMonitoringData(std::string json_data, std::string source="");
-  bool SendConfig(std::string json_data, std::string author, std::string device="");
-  bool GetConfig(std::string &json_data, int version, std::string device="");
+  bool Init(std::string name, std::string client_configfile, std::string db_name);
+  
+  bool SendCommand(const std::string& topic, const std::string& cmd_string, std::vector<std::string>* results=nullptr, std::string* err=nullptr,  const unsigned int timeout=300);
+  bool SendCommand(const std::string& topic, const std::string& cmd_string, std::string* result=nullptr, std::string* err=nullptr, const unsigned int timeout=300);
+  bool SendCommand(const std::string& cmd_string, std::string* err=nullptr);
+  
+  bool SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>* responses=nullptr, const unsigned int timeout=300);
+  bool SQLQuery(const std::string& database, const std::string& query, std::string* response=nullptr, const unsigned int timeout=300);
+  
+  bool SendLog(const std::string& message, unsigned int severity=2, const std::string& device="", const unsigned int timestamp=0);
+  bool SendAlarm(const std::string& message, unsigned int level=0, const std::string& device="", const unsigned int timestamp=0, const unsigned int timeout=300);
+  bool SendMonitoringData(const std::string& json_data, const std::string& device="", unsigned int timestamp=0);
+  bool SendCalibrationData(const std::string& json_data, const std::string& description, const std::string& device="", unsigned int timestamp=0, int* version=nullptr, const unsigned int timeout=300);
+  bool GetCalibrationData(std::string& json_data, int version=-1, const std::string& device="", const unsigned int timeout=300);
+  bool SendConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device="", unsigned int timestamp=0, int* version=nullptr, const unsigned int timeout=300);
+  bool GetConfig(std::string& json_data, int version=-1, const std::string& device="", const unsigned int timeout=300);
+  
+  std::string escape_json(std::string s);
 
   SlowControlCollection* GetSlowControlCollection();
   SlowControlElement* GetSlowControlVariable(std::string key);
@@ -47,8 +57,9 @@ class DAQInterface{
   bool RemoveSlowControlVariable(std::string name);
   void ClearSlowControlVariables();
 
-  bool TriggerSubscribe(std::string trigger, std::function<void(const char*)> function);
-  bool TriggerSend(std::string trigger);
+  bool AlertSubscribe(std::string alert, std::function<void(const char*, const char*)> function);
+  bool AlertSend(std::string alert, std::string payload);
+  
   std::string PrintSlowControlVariables();
   std::string GetDeviceName();
 
@@ -59,5 +70,7 @@ class DAQInterface{
   SlowControlCollection sc_vars;
   
 };
+
+}
 
 #endif

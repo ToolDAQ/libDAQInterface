@@ -2,11 +2,13 @@
 #include <DAQInterface.h>
 #include <functional>
 
+using namespace ToolFramework;
+
 class AutomatedFunctions {   ///////////// class for automating functions from slowcontrol
   
 public:
   
-  AutomatedFunctions(DAQInterface* in_DAQ_inter){  
+  AutomatedFunctions(DAQInterface* in_DAQ_inter){
 
     DAQ_inter=in_DAQ_inter;
 
@@ -14,11 +16,11 @@ public:
 
   DAQInterface* DAQ_inter;
   
-  void new_event_func(const char* trigger){
+  void new_event_func(const char* alert){
 
-    DAQ_inter->SendLog("Hello i received a new_event trigger");
+    DAQ_inter->SendLog("Hello i received a new_event alert");
     
-    //do new event trigger action, maybe reload configuration from DB ??
+    //do new event alert action, maybe reload configuration from DB ??
     
   }
   
@@ -71,15 +73,15 @@ int main(){
 
   DAQ_inter.sc_vars["Status"]->SetValue("Initialising"); //setting status message
 
-  ///////////////////////////////// logging alarms and triggers ///////////////////////////////
+  ///////////////////////////////// logging alarms and alerts ///////////////////////////////
 
   DAQ_inter.SendLog("unimportant message", 9, device_name);   //sending log message to database specifing severity and device name
   DAQ_inter.SendLog("important message", 0, device_name);   //sending log message to database
   DAQ_inter.SendLog("normal message");   //sending log message to database defualt level 2 defult name is name passed to DAQInterface constructor
 
-  DAQ_inter.SendAlarm("High current on channel 3", "High current alarm"); // sending alarm message to database
+  DAQ_inter.SendAlarm("High current on channel 3"); // sending alarm message to database
 
-  DAQ_inter.TriggerSubscribe("new_event",  std::bind(&AutomatedFunctions::new_event_func, automated_functions,  std::placeholders::_1)); // if the DAQ sends out a global "new_event" trigger will before the specifed function
+  DAQ_inter.AlertSubscribe("new_event",  std::bind(&AutomatedFunctions::new_event_func, automated_functions,  std::placeholders::_1)); // if the DAQ sends out a global "new_event" alert will before the specifed function
 
 
   ///////////////////////////////////////////////////////////////////////////
@@ -134,7 +136,7 @@ int main(){
   
   Store configuration; //making ascii store to hold and retreive configuration variables
   std::string config_json=""; //string to hold json configuration
-  unsigned int version=0; //version of configuration to get  
+  int version=-1; //version of configuration to get; -1 to get the latest
 
   float voltage_2 = DAQ_inter.sc_vars["voltage_2"]->GetValue<float>(); // example of indirect assignment of local variable from slow control collection
   DAQ_inter.sc_vars["voltage_2"]->GetValue(voltage_2); // example of direct assignment of local variable from slow control collection
@@ -154,7 +156,7 @@ int main(){
     
     //std::cout<<"sending new config_json: '"<<config_json<<"'"<<std::endl;
   
-    DAQ_inter.SendConfig(config_json, "Example"); //uplaod configuration to database
+    DAQ_inter.SendConfig(config_json, "John Doe", "My New Config"); //uplaod configuration to database
     
   } else{
 
@@ -208,7 +210,7 @@ int main(){
       DAQ_inter.sc_vars["Status"]->SetValue("Running");
       DAQ_inter.sc_vars["Start"]->SetValue(false);  // resetting slow control value after use.
     
-      DAQ_inter.sc_vars.TriggerSend("new_event"); // example of sending trigger to all DAQ devices
+      DAQ_inter.sc_vars.AlertSend("new_event"); // example of sending alert to all DAQ devices
 
     }
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

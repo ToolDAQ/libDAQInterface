@@ -3,7 +3,6 @@
 *.d
 *.a
 *~
-include
 lib
 */a.out
 main
