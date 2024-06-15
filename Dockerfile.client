@@ -10,7 +10,7 @@ RUN cd /opt/ \
     && mkdir root_v6.26.04_build \
     && mkdir root_v6.26.04 \
     && cd root_v6.26.04_build \
-    && cmake -DCMAKE_INSTALL_PREFIX=/opt/root_v6.26.04 -Dgminimal=ON -Dpyroot=ON -Dxrootd=OFF -Dbuiltin_xrootd=OFF  ../root_v6.26.04_src/ \
+    && cmake -DCMAKE_INSTALL_PREFIX=/opt/root_v6.26.04 -Dasimage=ON -Dgminimal=ON -Dpyroot=ON -Dxrootd=OFF -Dbuiltin_xrootd=OFF  ../root_v6.26.04_src/ \
     && cmake --build . --target install -j$(nproc --all) \
     && cd /opt/ \
     && rm -rf root_v6.26.04_src \

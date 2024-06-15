@@ -50,7 +50,7 @@ if [ -z ${argstring} ]; then
 		tooldaq "Install ToolDAQFramework" ${flags['tooldaq']} \
 		boost "Install Boost" ${flags['boost']} \
 		zmq "Install ZMQ" ${flags['zmq']} \
-		python "Install Python Support" ${flags['python']} \
+		python "Install Python Support (note: will install ROOT if not found)" ${flags['python']} \
 		2>&1 1>/dev/tty)
 		
 		# split space-delimited string of selected options into an array

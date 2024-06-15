@@ -1,4 +1,4 @@
-#include "SlowControlClient.h"
+#include "ServicesBackend.h"
 
 using namespace ToolFramework;
 
@@ -80,14 +80,14 @@ Command& Command::operator=(Command&& cmd_in){
 	return *this;
 }
 
-void SlowControlClient::SetUp(zmq::context_t* in_context, std::function<void(std::string msg, int msg_verb, int verbosity)> log){
+void ServicesBackend::SetUp(zmq::context_t* in_context, std::function<void(std::string msg, int msg_verb, int verbosity)> log){
 	
 	context = in_context;
 	m_log = log;
 	
 }
 
-bool SlowControlClient::Initialise(std::string configfile){
+bool ServicesBackend::Initialise(std::string configfile){
 	
 	/*               Retrieve Configs            */
 	/* ----------------------------------------- */
@@ -158,12 +158,12 @@ bool SlowControlClient::Initialise(std::string configfile){
 	// kick off a thread to do actual send and receive of messages
 	terminator = std::promise<void>{};
 	std::future<void> signal = terminator.get_future();
-	background_thread = std::thread(&SlowControlClient::BackgroundThread, this, std::move(signal));
+	background_thread = std::thread(&ServicesBackend::BackgroundThread, this, std::move(signal));
 	
 	return true;
 }
 
-bool SlowControlClient::InitZMQ(){
+bool ServicesBackend::InitZMQ(){
 	
 	/*                  ZMQ Setup                */
 	/* ----------------------------------------- */
@@ -210,7 +210,7 @@ bool SlowControlClient::InitZMQ(){
 	if(!get_ok){
 		boost::uuids::uuid u = boost::uuids::random_generator()();
 		clt_ID = boost::uuids::to_string(u);
-		std::cerr<<"Warning! no ZMQ_IDENTITY in SlowControlClient settings!"<<std::endl;
+		std::cerr<<"Warning! no ZMQ_IDENTITY in ServicesBackend settings!"<<std::endl;
 	}
 	clt_ID += '\0';
 	
@@ -251,7 +251,7 @@ bool SlowControlClient::InitZMQ(){
 	return true;
 }
 
-bool SlowControlClient::InitMulticast(){
+bool ServicesBackend::InitMulticast(){
 	
 	/*              Multicast Setup              */
 	/* ----------------------------------------- */
@@ -306,7 +306,7 @@ bool SlowControlClient::InitMulticast(){
 	return true;
 }
 
-bool SlowControlClient::RegisterServices(){
+bool ServicesBackend::RegisterServices(){
 	
 	/*             Register Services             */
 	/* ----------------------------------------- */
@@ -322,7 +322,7 @@ bool SlowControlClient::RegisterServices(){
 	return true;
 }
 
-void SlowControlClient::Log(std::string msg, int msg_verb, int verbosity){
+void ServicesBackend::Log(std::string msg, int msg_verb, int verbosity){
 	// this is normally defined in Tool.h
 	if(m_log) m_log(msg, msg_verb, verbosity);
 	else if(msg_verb<= verbosity) std::cout<<msg<<std::endl;
@@ -330,15 +330,15 @@ void SlowControlClient::Log(std::string msg, int msg_verb, int verbosity){
 }
 
 
-bool SlowControlClient::BackgroundThread(std::future<void> signaller){
+bool ServicesBackend::BackgroundThread(std::future<void> signaller){
 	
-	Log("SlowControlClient BackgroundThread starting!",v_debug,verbosity);
+	Log("ServicesBackend BackgroundThread starting!",v_debug,verbosity);
 	while(true){
 		// check if we've been signalled to terminate
 		std::chrono::milliseconds span(10);
 		if(signaller.wait_for(span)!=std::future_status::timeout){
 			// terminate has been set
-			Log("SlowControlClient background thread received terminate signal",v_debug,verbosity);
+			Log("ServicesBackend background thread received terminate signal",v_debug,verbosity);
 			break;
 		}
 		
@@ -350,10 +350,10 @@ bool SlowControlClient::BackgroundThread(std::future<void> signaller){
 	return true;
 }
 
-bool SlowControlClient::SendMulticast(std::string command, std::string* err){
+bool ServicesBackend::SendMulticast(std::string command, std::string* err){
 	// multicast send. These do not wait for a response, so no timeout.
 	// only immediately evident errors are reported. receipt is not confirmed.
-	if(verbosity>10) std::cout<<"SlowControlClient::SendMulticast invoked with command '"<<command<<"'"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::SendMulticast invoked with command '"<<command<<"'"<<std::endl;
 	
 	// check for listeners...?
 	zmq::poll(&multicast_poller,1, 0);   // timeout 0 = return immediately... XXX
@@ -382,21 +382,21 @@ bool SlowControlClient::SendMulticast(std::string command, std::string* err){
 // then we would only wait for 200ms for the reply.                                                     //
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool SlowControlClient::SendCommand(const std::string& topic, const std::string& command, std::vector<std::string>* results, const unsigned int* timeout_ms, std::string* err){
+bool ServicesBackend::SendCommand(const std::string& topic, const std::string& command, std::vector<std::string>* results, const unsigned int* timeout_ms, std::string* err){
 	// send a command and receive response.
 	// This is a wrapper that ensures we always return within the requested timeout.
-	if(verbosity>10) std::cout<<"SlowControlClient::SendCommand invoked with command '"<<command<<"'"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::SendCommand invoked with command '"<<command<<"'"<<std::endl;
 	
 	// encapsulate the command in an object.
 	// We need this since we can only get one return value from an asynchronous function call,
 	// and we want both a response string and error flag.
-	if(verbosity>10) std::cout<<"SlowControlClient::SendCommand constructing Command"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::SendCommand constructing Command"<<std::endl;
 	
 	// for now, different message types need to go out on different sockets:
 	// writes go over pub sockets and reads over dealer sockets. (This may change soon...)
 	// libDAQInterface prefixes the socket with `R_` or `W_` to indicate which kind of socket to use.
 	if(topic.length()==0){
-		std::string errmsg = "SlowControlClient::SendCommand received empty topic for command '"
+		std::string errmsg = "ServicesBackend::SendCommand received empty topic for command '"
 		                   + command + "'";
 		Log(errmsg,v_error,verbosity);
 		if(err) *err= errmsg;
@@ -404,7 +404,7 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 	}
 	char type = std::tolower(topic[0]);
 	if(type!='r' && type!='w'){
-		std::string errmsg = "SlowControlClient::SendCommand received invalid topic for command '"
+		std::string errmsg = "ServicesBackend::SendCommand received invalid topic for command '"
 		                   + command + "'; please prefix with 'r_' or 'w_' to indicate socket type to use";
 		Log(errmsg,v_error,verbosity);
 		if(err) *err= errmsg;
@@ -420,7 +420,7 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 	// submit the command asynchrously.
 	// This way we have control over how long we wait for the response
 	// The response will be a Command object with remaining members populated.
-	//std::future<Command> response = std::async(std::launch::async, &SlowControlClient::DoCommand, this, cmd);
+	//std::future<Command> response = std::async(std::launch::async, &ServicesBackend::DoCommand, this, cmd);
 	// std::async returns a std::future that will block on destruction until the promise returns.
 	// if we don't want that to happen, i.e. we want to abandon it if it times out,
 	// we instead need to obtain a future from a promise (which is somehow not blocking?),
@@ -429,8 +429,8 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 	// see https://stackoverflow.com/a/23454840/3544936 and https://stackoverflow.com/a/23460094/3544936
 	std::promise<Command> returnval;
 	std::future<Command> response = returnval.get_future();
-	if(verbosity>10) std::cout<<"SlowControlClient::SendCommand spinning up new thread"<<std::endl;
-	std::thread{&SlowControlClient::DoCommand, this, cmd, std::move(returnval)}.detach();
+	if(verbosity>10) std::cout<<"ServicesBackend::SendCommand spinning up new thread"<<std::endl;
+	std::thread{&ServicesBackend::DoCommand, this, cmd, std::move(returnval)}.detach();
 	
 	// the return from a std::async call is a 'future' object
 	// this object will be populated with the return value when it becomes available,
@@ -442,12 +442,12 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 	// wrap our attempt to get the future in a try-catch, in case of exception
 	try {
 		// wait_for will return either when the result is ready, or when it times out
-		if(verbosity>10) std::cout<<"SlowControlClient::SendCommand waiting for response"<<std::endl;
+		if(verbosity>10) std::cout<<"ServicesBackend::SendCommand waiting for response"<<std::endl;
 		if(response.wait_for(span)!=std::future_status::timeout){
 			// we got a response in time. retrieve and parse return value
-			if(verbosity>10) std::cout<<"SlowControlClient::SendCommand fetching response"<<std::endl;
+			if(verbosity>10) std::cout<<"ServicesBackend::SendCommand fetching response"<<std::endl;
 			cmd = response.get();
-			if(verbosity>10) std::cout<<"SlowControlClient::SendCommand response is "<<cmd.response.size()
+			if(verbosity>10) std::cout<<"ServicesBackend::SendCommand response is "<<cmd.response.size()
 			                          <<" parts"<<std::endl;
 			if(results) *results = cmd.response;
 			if(err) *err = cmd.err;
@@ -455,7 +455,7 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 		} else {
 			// timed out
 			std::string errmsg="Timed out after waiting "+std::to_string(timeout)+"ms for response "
-			                   "from read command '"+command+"'";
+			                   "from command '"+command+"'";
 			if(verbosity>3) std::cerr<<errmsg<<std::endl;
 			if(err) *err=errmsg;
 			//std::cout<<"SendCommand returning false"<<std::endl;
@@ -465,12 +465,12 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 		// one thing that can cause an exception is if we terminate the application
 		// before the promise is fulfilled (i.e. the response came, or zmq timed out)
 		// so long as we catch it's fine.
-		Log(std::string{"SlowControlClient caught "}+e.what()+" waiting for command "+command,v_error,verbosity);
+		Log(std::string{"ServicesBackend caught "}+e.what()+" waiting for command "+command,v_error,verbosity);
 	}
 	return false;
 }
 
-bool SlowControlClient::SendCommand(const std::string& topic, const std::string& command, std::string* results, const unsigned int* timeout_ms, std::string* err){
+bool ServicesBackend::SendCommand(const std::string& topic, const std::string& command, std::string* results, const unsigned int* timeout_ms, std::string* err){
 	// wrapper for when user expects only one returned response part
 	if(err) *err="";
 	std::vector<std::string> resultsvec;
@@ -484,8 +484,8 @@ bool SlowControlClient::SendCommand(const std::string& topic, const std::string&
 	return ret;
 }
 
-bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
-	if(verbosity>10) std::cout<<"SlowControlClient::DoCommand received command"<<std::endl;
+bool ServicesBackend::DoCommand(Command cmd, std::promise<Command> result){
+	if(verbosity>10) std::cout<<"ServicesBackend::DoCommand received command"<<std::endl;
 	// submit a command, wait for the response and return it
 	
 	// capture a unique id for this message
@@ -501,7 +501,7 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 	// as a recipient for a response before we even send the request, to ensure that
 	// we can be identified as a the recipient as soon as we submit our command.
 	// It's a little odd, but that's how it is.
-	if(verbosity>10) std::cout<<"SlowControlClient::DoCommand pre-emptively submitting ticket for response"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::DoCommand pre-emptively submitting ticket for response"<<std::endl;
 	std::promise<Command> response_ticket;
 	std::future<Command> response_reciept = response_ticket.get_future();
 	send_queue_mutex.lock();
@@ -512,14 +512,14 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 	std::promise<int> send_ticket;
 	std::future<int> send_receipt = send_ticket.get_future();
 	send_queue_mutex.lock();
-	if(verbosity>10) std::cout<<"SlowControlClient::DoCommand putting command into waiting-to-send list"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::DoCommand putting command into waiting-to-send list"<<std::endl;
 	waiting_senders.emplace(cmd, std::move(send_ticket));
 	send_queue_mutex.unlock();
 	
 	// wait for our number to come up. loooong timeout, but don't hang forever.
-	if(verbosity>10) std::cout<<"SlowControlClient::DoCommand waiting for send confirmation"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::DoCommand waiting for send confirmation"<<std::endl;
 	if(send_receipt.wait_for(std::chrono::seconds(30))==std::future_status::timeout){
-		if(verbosity>10) std::cerr<<"SlowControlClient::DoCommand timeout"<<std::endl;
+		if(verbosity>10) std::cerr<<"ServicesBackend::DoCommand timeout"<<std::endl;
 		// sending timed out
 		if(cmd.type=='w') ++write_commands_failed;
 		else if(cmd.type=='r') ++read_commands_failed;
@@ -530,7 +530,7 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 		
 		// since we are giving up waiting for the response, remove ourselves from
 		// the list of waiting recipients
-		if(verbosity>10) std::cout<<"SlowControlClient::DoCommand de-registering for response on id "<<thismsgid<<std::endl;
+		if(verbosity>10) std::cout<<"ServicesBackend::DoCommand de-registering for response on id "<<thismsgid<<std::endl;
 		send_queue_mutex.lock();
 		waiting_recipients.erase(thismsgid);
 		send_queue_mutex.unlock();
@@ -540,14 +540,14 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 	
 	// so we got response about our send request, but did it go through?
 	// check for errors sending
-	if(verbosity>10) std::cout<<"SlowControlClient::DoCommand got send confirmation"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::DoCommand got send confirmation"<<std::endl;
 	int ret = send_receipt.get();
 	std::string errmsg;
 	if(ret==-3) errmsg="Error polling out socket in PollAndSend! Is socket closed?";
 	if(ret==-2) errmsg="No listener on out socket in PollAndSend!";
 	if(ret==-1) errmsg="Error sending in PollAndSend!";
 	if(ret!=0){
-		if(verbosity>10) std::cout<<"SlowControlClient::DoCommand got response "<<ret
+		if(verbosity>10) std::cout<<"ServicesBackend::DoCommand got response "<<ret
 		                          <<" from PollAndSend: sending failed"<<std::endl;
 		if(cmd.type=='w') ++write_commands_failed;
 		else if(cmd.type=='r') ++read_commands_failed;
@@ -559,19 +559,19 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 		// since the send failed we don't expect a response, so remove ourselves
 		// from the list of recipients awaiting response
 		send_queue_mutex.lock();
-		if(verbosity>10) std::cout<<"SlowControlClient::DoCommand de-registering for response on command "<<thismsgid<<std::endl;
+		if(verbosity>10) std::cout<<"ServicesBackend::DoCommand de-registering for response on command "<<thismsgid<<std::endl;
 		waiting_recipients.erase(thismsgid);
 		send_queue_mutex.unlock();
 		
 		return false;
 	} else {
-		if(verbosity>10) std::cout<<"SlowControlClient::DoCommand message sent successfully"<<std::endl;
+		if(verbosity>10) std::cout<<"ServicesBackend::DoCommand message sent successfully"<<std::endl;
 	}
 	
 	// if we succeeded in sending the message, we now need to wait for a repsonse.
-	if(verbosity>10) std::cout<<"SlowControlClient::DoCommand waiting for response"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::DoCommand waiting for response"<<std::endl;
 	if(response_reciept.wait_for(std::chrono::seconds(30))==std::future_status::timeout){
-		if(verbosity>10) std::cout<<"SlowControlClient::DoCommand response timeout"<<std::endl;
+		if(verbosity>10) std::cout<<"ServicesBackend::DoCommand response timeout"<<std::endl;
 		// timed out
 		if(cmd.type=='w') ++write_commands_failed;
 		else if(cmd.type=='r') ++read_commands_failed;
@@ -582,12 +582,12 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 		return false;
 	} else {
 		// got a response!
-		if(verbosity>10) std::cout<<"SlowControlClient::DoCommand got a response for command "<<cmd.msg_id
+		if(verbosity>10) std::cout<<"ServicesBackend::DoCommand got a response for command "<<cmd.msg_id
 		                          <<", passing back to caller"<<std::endl;
 		try{
 			result.set_value(response_reciept.get());
 		} catch(std::exception& e){
-			Log("SlowControlClient response for command "+std::to_string(cmd.msg_id)+" was exception "+e.what(),v_error,verbosity);
+			Log("ServicesBackend response for command "+std::to_string(cmd.msg_id)+" was exception "+e.what(),v_error,verbosity);
 			cmd.err=e.what();
 			cmd.success=false;
 			result.set_value(cmd);
@@ -600,19 +600,19 @@ bool SlowControlClient::DoCommand(Command cmd, std::promise<Command> result){
 	
 }
 
-bool SlowControlClient::GetNextResponse(){
+bool ServicesBackend::GetNextResponse(){
 	// get any new messages from middleman, and notify the client of the outcome
 	
 	std::vector<zmq::message_t> response;
 	dlr_socket_mutex.lock();
 	int ret = PollAndReceive(clt_dlr_socket, in_polls.at(0), inpoll_timeout, response);
 	dlr_socket_mutex.unlock();
-	//std::cout<<"SlowControlClient: GNR returned "<<ret<<std::endl;
+	//std::cout<<"ServicesBackend: GNR returned "<<ret<<std::endl;
 	
 	// check return status
 	if(ret==-2) return true;      // no messages waiting to be received
 	
-	if(verbosity>10) std::cout<<"SlowControlClient::GetNextResponse had response in socket"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::GetNextResponse had response in socket"<<std::endl;
 	if(ret==-3){
 		Log("PollAndReceive Error polling in socket! Is socket closed?",v_error,verbosity);
 		return false;
@@ -663,7 +663,7 @@ bool SlowControlClient::GetNextResponse(){
 	
 	if(verbosity>3){
 		std::stringstream logmsg;
-		logmsg << "SlowControlClient::GetNextResponse received response to command "<<message_id_rcvd
+		logmsg << "ServicesBackend::GetNextResponse received response to command "<<message_id_rcvd
 		       <<"; status "<<cmd.success<<", response '";
 		for(auto& apart : cmd.response){
 			logmsg<<"["<<apart<<"]";
@@ -689,14 +689,14 @@ bool SlowControlClient::GetNextResponse(){
 	return true;
 }
 
-bool SlowControlClient::SendNextCommand(){
+bool ServicesBackend::SendNextCommand(){
 	// send the next message in the waiting command queue
 	
 	if(waiting_senders.empty()){
 		// nothing to send
 		return true;
 	}
-	if(verbosity>10) std::cout<<"SlowControlClient::SendNextCommand got outgoing command to send"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::SendNextCommand got outgoing command to send"<<std::endl;
 	
 	// get the next command to send
 	send_queue_mutex.lock();
@@ -704,7 +704,7 @@ bool SlowControlClient::SendNextCommand(){
 	waiting_senders.pop();
 	send_queue_mutex.unlock();
 	Command& cmd = next_cmd.first;
-	if(verbosity>10) std::cout<<"SlowControlClient::SendNextCommand sending command "<<cmd.msg_id<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::SendNextCommand sending command "<<cmd.msg_id<<std::endl;
 	if(verbosity>3){
 		std::stringstream logmsg;
 		logmsg<<"Sending command "<<cmd.msg_id<<", \""<<cmd.command<<"\""<<std::endl;
@@ -724,7 +724,7 @@ bool SlowControlClient::SendNextCommand(){
 	// the ZMQ identity of the sender. Writes go out via a Pub socket that does not!
 	int ret=-99;
 	dlr_socket_mutex.lock();
-	if(verbosity>10) std::cout<<"SlowControlClient::SendNextCommand calling PollAndSend"
+	if(verbosity>10) std::cout<<"ServicesBackend::SendNextCommand calling PollAndSend"
 	                          <<", message type: "<<cmd.type<<", topic '"<<cmd.topic<<"'"<<std::endl;
 	if(cmd.type=='w'){
 		ret = PollAndSend(thesocket, out_polls.at(1), outpoll_timeout, cmd.topic, clt_ID, cmd.msg_id, cmd.command);
@@ -732,9 +732,9 @@ bool SlowControlClient::SendNextCommand(){
 		// clt_ID already added by dealer socket
 		ret = PollAndSend(thesocket, out_polls.at(1), outpoll_timeout, cmd.topic, cmd.msg_id, cmd.command);
 	}
-	if(verbosity>10) std::cout<<"SlowControlClient::SendNextCommand send returned "<<ret<<", passing to recipient"<<std::endl;
+	if(verbosity>10) std::cout<<"ServicesBackend::SendNextCommand send returned "<<ret<<", passing to recipient"<<std::endl;
 	dlr_socket_mutex.unlock();
-	//std::cout<<"SlowControlClient SNC P&S returned "<<ret<<std::endl;
+	//std::cout<<"ServicesBackend SNC P&S returned "<<ret<<std::endl;
 	
 	// notify the client that the message has been sent
 	next_cmd.second.set_value(ret);
@@ -743,29 +743,29 @@ bool SlowControlClient::SendNextCommand(){
 	
 }
 
-bool SlowControlClient::Finalise(){
+bool ServicesBackend::Finalise(){
 	// terminate our background thread
-	Log("SlowControlClient sending background thread term signal",v_debug,verbosity);
+	Log("ServicesBackend sending background thread term signal",v_debug,verbosity);
 	terminator.set_value();
 	// wait for it to finish up and return
-	Log("SlowControlClient waiting for background thread to rejoin",v_debug,verbosity);
+	Log("ServicesBackend waiting for background thread to rejoin",v_debug,verbosity);
 	background_thread.join();
 	
-	Log("SlowControlClient Removing services",v_debug,verbosity);
+	Log("ServicesBackend Removing services",v_debug,verbosity);
 	if(utilities) utilities->RemoveService("slowcontrol_write");
 	if(utilities) utilities->RemoveService("slowcontrol_read");
 	
-	Log("SlowControlClient Closing multicast socket",v_debug,verbosity);
+	Log("ServicesBackend Closing multicast socket",v_debug,verbosity);
 	close(multicast_socket);
 	
-	Log("SlowControlClient Deleting Utilities class",v_debug,verbosity);
+	Log("ServicesBackend Deleting Utilities class",v_debug,verbosity);
 	if(utilities) delete utilities; utilities=nullptr;
 	
 	// clear old connections
 	clt_pub_connections.clear();
 	clt_dlr_connections.clear();
 	
-	Log("SlowControlClient deleting sockets",v_debug,verbosity);
+	Log("ServicesBackend deleting sockets",v_debug,verbosity);
 	delete clt_pub_socket; clt_pub_socket=nullptr;
 	delete clt_dlr_socket; clt_dlr_socket=nullptr;
 	
@@ -778,7 +778,7 @@ bool SlowControlClient::Finalise(){
 	waiting_recipients.clear();
 	
 	// can't use 'Log' since we may have deleted the Logging class
-	if(verbosity>3) std::cout<<"SlowControlClient finalise done"<<std::endl;
+	if(verbosity>3) std::cout<<"ServicesBackend finalise done"<<std::endl;
 	
 	return true;
 }
@@ -786,7 +786,7 @@ bool SlowControlClient::Finalise(){
 // =====================================================================
 // ZMQ helper functions; TODO move these to external class? since they're shared by middleman.
 
-bool SlowControlClient::Send(zmq::socket_t* sock, bool more, zmq::message_t& message){
+bool ServicesBackend::Send(zmq::socket_t* sock, bool more, zmq::message_t& message){
 	if(verbosity>10) std::cout<<__PRETTY_FUNCTION__<<" called"<<std::endl;
 	bool send_ok;
 	if(more){
@@ -801,7 +801,7 @@ bool SlowControlClient::Send(zmq::socket_t* sock, bool more, zmq::message_t& mes
 	return send_ok;
 }
 
-bool SlowControlClient::Send(zmq::socket_t* sock, bool more, std::string messagedata){
+bool ServicesBackend::Send(zmq::socket_t* sock, bool more, std::string messagedata){
 	if(verbosity>10) std::cout<<__PRETTY_FUNCTION__<<" called"<<std::endl;
 	// form the zmq::message_t
 	zmq::message_t message(messagedata.size());
@@ -822,7 +822,7 @@ bool SlowControlClient::Send(zmq::socket_t* sock, bool more, std::string message
 	return send_ok;
 }
 
-bool SlowControlClient::Send(zmq::socket_t* sock, bool more, std::vector<std::string> messages){
+bool ServicesBackend::Send(zmq::socket_t* sock, bool more, std::vector<std::string> messages){
 	if(verbosity>10) std::cout<<__PRETTY_FUNCTION__<<" called"<<std::endl;
 	
 	// loop over all but the last part in the input vector,
@@ -864,13 +864,13 @@ bool SlowControlClient::Send(zmq::socket_t* sock, bool more, std::vector<std::st
 	return send_ok;
 }
 
-int SlowControlClient::PollAndReceive(zmq::socket_t* sock, zmq::pollitem_t poll, int timeout, std::vector<zmq::message_t>& outputs){
+int ServicesBackend::PollAndReceive(zmq::socket_t* sock, zmq::pollitem_t poll, int timeout, std::vector<zmq::message_t>& outputs){
 	
 	// poll the input socket for messages
 	try {
 		get_ok = zmq::poll(&poll, 1, timeout);
 	} catch (zmq::error_t& err){
-		std::cerr<<"SlowControlClient::PollAndReceive poller caught "<<err.what()<<std::endl;
+		std::cerr<<"ServicesBackend::PollAndReceive poller caught "<<err.what()<<std::endl;
 		get_ok = -1;
 	}
 	if(get_ok<0){
@@ -893,7 +893,7 @@ int SlowControlClient::PollAndReceive(zmq::socket_t* sock, zmq::pollitem_t poll,
 	return 0;
 }
 
-bool SlowControlClient::Receive(zmq::socket_t* sock, std::vector<zmq::message_t>& outputs){
+bool ServicesBackend::Receive(zmq::socket_t* sock, std::vector<zmq::message_t>& outputs){
 	
 	outputs.clear();
 	int part=0;

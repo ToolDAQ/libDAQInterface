@@ -234,7 +234,8 @@ rm -f root_v${ROOTVER}.source.tar.gz
 mkdir root_v${ROOTVER}   # install dir
 mkdir rootbuild          # build dir (temporary)
 cd rootbuild
-cmake3 ../root-${ROOTVER} -Dpyroot=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_INSTALL_PREFIX=${INSTALLDIR}/root_v${ROOTVER} #-DCMAKE_CXX_STANDARD=14
+cmake3 ../root-${ROOTVER} -Dpyroot=ON -Dasimage=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_INSTALL_PREFIX=${INSTALLDIR}/root_v${ROOTVER} #-DCMAKE_CXX_STANDARD=14
+#-Dgminimal=ON
 make -j$(nproc)
 make install
 cd ../

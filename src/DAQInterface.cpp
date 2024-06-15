@@ -2,11 +2,18 @@
 
 using namespace ToolFramework;
 
-DAQInterface::DAQInterface(){
+DAQInterface::DAQInterface(zmq::context_t* context_in){
   
-  sc_vars.InitThreadedReceiver(&m_context, 88888, 100, false);
+  if(context_in){
+    m_context = context_in;
+    free_context = false; // we have been given this context; do not handle its cleanup
+  } else {
+    m_context = new zmq::context_t{};
+    free_context = true;  // we made this context. delete it in our destructor.
+  }
+  sc_vars.InitThreadedReceiver(m_context, 88888, 100, false);
   
-  m_scclient.SetUp(&m_context);
+  m_scclient.SetUp(m_context);
   
 }
  
@@ -16,6 +23,8 @@ DAQInterface::~DAQInterface(){
   sc_vars.Clear();
   delete mp_SD;
   mp_SD=0;
+  //if(free_context) delete m_context;
+  m_context=nullptr;
   
 }
 
@@ -24,7 +33,7 @@ bool DAQInterface::Init(std::string name, std::string client_configfile, std::st
   m_name=name;
   m_dbname=db_name;
   
-  mp_SD = new ServiceDiscovery(true, false, 88888, "239.192.1.1", 5000, &m_context, boost::uuids::random_generator()(), name, 5, 60);
+  mp_SD = new ServiceDiscovery(true, false, 88888, "239.192.1.1", 5000, m_context, boost::uuids::random_generator()(), name, 5, 60);
    
   if(!m_scclient.Initialise(client_configfile)){
     std::cerr<<"error initialising slowcontrol client"<<std::endl;
@@ -103,7 +112,8 @@ bool DAQInterface::SendAlarm(const std::string& message, unsigned int level, con
   }
   
   // also record it to the logging socket
-  cmd_string = "{\"time\":"+std::to_string(timestamp)
+  cmd_string = std::string{"{ \"topic\":\"logging\""}
+             + ",\"time\":"+std::to_string(timestamp)
              + ",\"device\":\""+escape_json(name)+"\""
              + ",\"severity\":0"
              + ",\"message\":\"" + escape_json(message) + "\"}";
@@ -136,10 +146,10 @@ bool DAQInterface::SendCalibrationData(const std::string& json_data, const std::
   }
   
   // response is json with the version number of the created config entry
-  // e.g. '{"version":3}'. check this is what we got, as validation.
-  if(response.length()>12){
-    response.replace(0,11,"");
-    response.replace(response.end()-1, response.end(),"");
+  // e.g. '{"version":"3"}'. check this is what we got, as validation.
+  if(response.length()>14){
+    response.replace(0,12,"");
+    response.replace(response.end()-2, response.end(),"");
     try {
       if(version) *version = std::stoi(response);
     } catch (...){
@@ -176,10 +186,10 @@ bool DAQInterface::SendConfig(const std::string& json_data, const std::string& a
   }
   
   // response is json with the version number of the created config entry
-  // e.g. '{"version":3}'. check this is what we got, as validation.
-  if(response.length()>12){
-    response.replace(0,11,"");
-    response.replace(response.end()-1, response.end(),"");
+  // e.g. '{"version":"3"}'. check this is what we got, as validation.
+  if(response.length()>14){
+    response.replace(0,12,"");
+    response.replace(response.end()-2, response.end(),"");
     try {
       if(version) *version = std::stoi(response);
     } catch (...){
@@ -248,6 +258,68 @@ bool DAQInterface::GetConfig(std::string& json_data, int version, const std::str
   
 }
 
+bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::string& draw_options, std::string& json_data, std::string* timestamp, const unsigned int timeout){
+  
+  std::string cmd_string = "{ \"plot_name\":\""+escape_json(plot_name) + "\""
+                         + ", \"version\":" + std::to_string(version)+ "}";
+  
+  std::string err="";
+  std::string response;
+  if(!SendCommand("R_ROOTPLOT", cmd_string, &response, &err, timeout)){
+    std::cerr<<"GetROOTplot error: "<<err<<std::endl;
+    json_data = err;
+    return false;
+  }
+  
+  if(response.empty()){
+    std::cout<<"GetROOTplot error: empty response, "<<err<<std::endl;
+    json_data = err;
+    return false;
+  }
+  
+  // response format '{"draw_options":"<options>", "timestamp":<value>, "version": <value>, "data":"<contents>"}'
+  size_t pos1=0, pos2=0;
+  std::string key;
+  std::map<std::string,std::string> vals;
+  while(true){
+    pos1=response.find('"',pos2);
+    if(pos1==std::string::npos) break;
+    pos2=response.find('"',++pos1);
+    if(pos2==std::string::npos) break;
+    std::string str = response.substr(pos1,(pos2-pos1));
+    ++pos2;
+    if(key.empty()){ key = str; }
+    else if(key=="data"){ break; }
+    else { vals[key] = str; key=""; }
+  }
+  vals[key] = response.substr(pos1,response.find_last_of('"')-pos1);
+  
+  try{
+    draw_options = vals["draw_options"];
+    if(timestamp) *timestamp = vals["timestamp"];
+    version = std::stoi(vals["version"]);
+    json_data = vals["data"];
+  } catch(...){
+    std::cerr<<"GetROOTplot error: failed to parse response '"<<response<<"'"<<std::endl;
+    json_data = "Parse error";
+    return false;
+  }
+  
+  /*
+  std::cout<<"timestamp: "<<timestamp<<"\n"
+           <<"draw opts: "<<draw_options<<"\n"
+           <<"json data: '"<<json_data<<"'"<<std::endl;
+  */
+  
+  return true;
+  
+}
+
+bool DAQInterface::GetPlot(){
+  // placeholder for evgenii
+  return true;
+}
+
 bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>* responses, const unsigned int timeout){
   
   if(responses) responses->clear();
@@ -300,10 +372,16 @@ bool DAQInterface::SendLog(const std::string& message, unsigned int severity, co
   
   const std::string& name = (device=="") ? m_name : device;
   
-  std::string cmd_string = "{\"time\":"+std::to_string(timestamp)
+  std::string cmd_string = std::string{"{ \"topic\":\"logging\""}
+                         + ",\"time\":"+std::to_string(timestamp)
                          + ",\"device\":\""+escape_json(name)+"\""
                          + ",\"severity\":"+std::to_string(severity)
                          + ",\"message\":\"" + escape_json(message) + "\"}";
+  
+  if(cmd_string.length()>655355){
+    std::cerr<<"Logging message is too long! Maximum length may be 655355 bytes"<<std::endl;
+    return false;
+  }
   
   std::string err="";
   
@@ -320,9 +398,15 @@ bool DAQInterface::SendMonitoringData(const std::string& json_data, const std::s
   
   const std::string& name = (device=="") ? m_name : device;
   
-  std::string cmd_string = "{ \"time\":"+std::to_string(timestamp)
+  std::string cmd_string = std::string{"{ \"topic\":\"monitoring\""}
+                         + ", \"time\":"+std::to_string(timestamp)
                          + ", \"device\":\""+escape_json(name)+"\""
                          + ", \"data\":\""+escape_json(json_data)+"\" }";
+  
+  if(cmd_string.length()>655355){
+    std::cerr<<"Monitoring message is too long! Maximum length may be 655355 bytes"<<std::endl;
+    return false;
+  }
   
   std::string err="";
   
@@ -333,6 +417,80 @@ bool DAQInterface::SendMonitoringData(const std::string& json_data, const std::s
   
   return true;
   
+}
+
+// wrapper to send a root plot either to a temporary table or a persistent one
+bool DAQInterface::SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, bool persistent, int* version, const unsigned int timestamp, const unsigned int timeout){
+  if(!persistent) return SendTemporaryROOTplot(plot_name, draw_options, json_data, version, timestamp);
+  return SendPersistentROOTplot(plot_name, draw_options, json_data, version, timestamp, timeout);
+}
+
+// send to persistent table over TCP
+bool DAQInterface::SendPersistentROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version, const unsigned int timestamp, const unsigned int timeout){
+  
+  std::string cmd_string = "{ \"time\":"+std::to_string(timestamp)
+                         + ", \"plot_name\":\""+escape_json(plot_name)+"\""
+                         + ", \"draw_options\":\""+escape_json(draw_options)+"\""
+                         + ", \"data\":\""+escape_json(json_data)+"\" }";
+  
+  std::string err="";
+  std::string response="";
+  
+  if(!SendCommand("W_ROOTPLOT", cmd_string, &response, &err, timeout)){
+    std::cerr<<"SendROOTplot error: "<<err<<std::endl;
+    return false;
+  }
+  
+  // response is json with the version number of the created plot entry
+  // e.g. '{"version":"3"}'. check this is what we got, as validation.
+  if(response.length()>14){
+    response.replace(0,12,"");
+    response.replace(response.end()-2, response.end(),"");
+    try {
+      if(version) *version = std::stoi(response);
+    } catch (...){
+      std::cerr<<"SendROOTplot error: invalid response '"<<response<<"'"<<std::endl;
+      return false;
+    }
+  } else {
+    std::cerr<<"SendROOTplot error: invalid response: '"<<response<<"'"<<std::endl;
+    return false;
+  }
+  
+  return true;
+  
+}
+
+// send to temporary table over multicast
+bool DAQInterface::SendTemporaryROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version, const unsigned int timestamp){
+  
+  std::string cmd_string = std::string{"{ \"topic\":\"rootplot\""}
+                         + ", \"time\":"+std::to_string(timestamp)
+                         + ", \"plot_name\":\""+escape_json(plot_name)+"\""
+                         + ", \"draw_options\":\""+escape_json(draw_options)+"\""
+                         + ", \"data\":\""+escape_json(json_data)+"\" }";
+  
+  if(cmd_string.length()>655355){
+    std::cerr<<"ROOT plot json is too long! Maximum length may be 655355 bytes"<<std::endl;
+    return false;
+  }
+  
+  std::string err="";
+  
+  if(!SendCommand(cmd_string, &err)){
+    std::cerr<<"SendROOTplot error: "<<err<<std::endl;
+    return false;
+  }
+  
+  return true;
+  
+}
+
+bool DAQInterface::SendPlot(){
+  
+  // placeholder for evgenii
+  
+  return true;
 }
 
 // ===========================================================================
@@ -392,7 +550,7 @@ std::string DAQInterface::GetDeviceName(){
   
 }
 
-std::string DAQInterface::escape_json(std::string s){
+std::string DAQInterface::escape_json(const std::string& s){
   return s;
   
   // https://stackoverflow.com/a/27516892
@@ -403,24 +561,25 @@ std::string DAQInterface::escape_json(std::string s){
   // e.g. '\n' -> line feed, or 0x5C 0x6E -> 0x0A, which alters the user's string.
   
   size_t pos=0;
+  std::string ss = s;
   do {
-    pos = s.find("\\",pos);
+    pos = ss.find("\\",pos);
     if(pos!=std::string::npos){
-      s.insert(pos,"\\");
+      ss.insert(pos,"\\");
       pos+=2;
     }
   } while(pos!=std::string::npos);
   
   pos=0;
   do {
-    pos = s.find('"',pos);
+    pos = ss.find('"',pos);
     if(pos!=std::string::npos){
-      s.insert(pos,"\\");
+      ss.insert(pos,"\\");
       pos+=2;
     }
   } while(pos!=std::string::npos);
   
-  return s;
+  return ss;
 }
 
 

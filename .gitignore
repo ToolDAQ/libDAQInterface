@@ -4,7 +4,11 @@
 *.a
 *~
 lib
+Dependencies
 */a.out
 main
 NodeDaemon
 RemoteControl
+Example/Example
+Example/Example_root
+Win_Mac_translation

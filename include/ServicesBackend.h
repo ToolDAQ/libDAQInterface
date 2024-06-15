@@ -1,5 +1,5 @@
-#ifndef SlowControlClient_H
-#define SlowControlClient_H
+#ifndef ServicesBackend_H
+#define ServicesBackend_H
 
 #include "Store.h"
 #include "DAQUtilities.h"
@@ -46,10 +46,10 @@ namespace ToolFramework {
 
 enum class SlowControlMsg { Query, Log, Alarm, Monitoring, Calibration, Config };
 
-class SlowControlClient {
+class ServicesBackend {
 	public:
-	SlowControlClient(){};
-	~SlowControlClient(){};
+	ServicesBackend(){};
+	~ServicesBackend(){};
 	void SetUp(zmq::context_t* in_context, std::function<void(std::string msg, int msg_verb, int verbosity)> log=nullptr); // possibly move to constructor
 	bool Initialise(std::string configfile);
 	bool Finalise();
@@ -199,7 +199,7 @@ class SlowControlClient {
 		try {
 			ret = zmq::poll(&poll, 1, timeout);
 		} catch (zmq::error_t& err){
-			std::cerr<<"SlowControlClient::PollAndSend poller caught "<<err.what()<<std::endl;
+			std::cerr<<"ServicesBackend::PollAndSend poller caught "<<err.what()<<std::endl;
 			ret = -1;
 		}
 		if(ret<0){
@@ -227,7 +227,7 @@ class SlowControlClient {
 		try {
 			ret = zmq::poll(&poll, 1, timeout);
 		} catch (zmq::error_t& err){
-			std::cerr<<"SlowControlClient::PollAndSend poller caught "<<err.what()<<std::endl;
+			std::cerr<<"ServicesBackend::PollAndSend poller caught "<<err.what()<<std::endl;
 			ret = -1;
 		}
 		if(ret<0){

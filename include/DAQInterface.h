@@ -14,7 +14,7 @@
 #include <boost/uuid/uuid_io.hpp>         // streaming operators etc.
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/progress.hpp>
-#include <SlowControlClient.h>
+#include <ServicesBackend.h>
 
 namespace ToolFramework {
 
@@ -22,15 +22,16 @@ class DAQInterface{
 
  private:
 
-  zmq::context_t m_context;
+  zmq::context_t* m_context=nullptr;
+  bool free_context=false;
   ServiceDiscovery* mp_SD;
-  SlowControlClient m_scclient;
+  ServicesBackend m_scclient;
   std::string m_dbname;
   std::string m_name;
 
  public:
 
-  DAQInterface();
+  DAQInterface(zmq::context_t* context_in=nullptr);
   ~DAQInterface();
   bool Init(std::string name, std::string client_configfile, std::string db_name);
   
@@ -45,6 +46,12 @@ class DAQInterface{
   bool GetCalibrationData(std::string& json_data, int version=-1, const std::string& device="", const unsigned int timeout=300);
   bool SendConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device="", unsigned int timestamp=0, int* version=nullptr, const unsigned int timeout=300);
   bool GetConfig(std::string& json_data, int version=-1, const std::string& device="", const unsigned int timeout=300);
+  bool SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, bool persistent=false, int* version=nullptr, const unsigned int timestamp=0, const unsigned int timeout=300);
+  bool SendTemporaryROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version=nullptr, const unsigned int timestamp=0);
+  bool SendPersistentROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version=nullptr, const unsigned int timestamp=0, const unsigned int timeout=300);
+  bool GetROOTplot(const std::string& plot_name, int& version, std::string& draw_option, std::string& json_data, std::string* timestamp=nullptr, const unsigned int timeout=300);
+  bool SendPlot();
+  bool GetPlot();
   
   SlowControlCollection* GetSlowControlCollection();
   SlowControlElement* GetSlowControlVariable(std::string key);
@@ -70,7 +77,7 @@ private:
   bool SendCommand(const std::string& topic, const std::string& cmd_string, std::string* result=nullptr, std::string* err=nullptr, const unsigned int timeout=300);
   bool SendCommand(const std::string& cmd_string, std::string* err=nullptr);
 
-  std::string escape_json(std::string s);
+  std::string escape_json(const std::string& s);
 
   
 };
