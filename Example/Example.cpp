@@ -258,6 +258,20 @@ int main(){
   Store monitoring_data; // sorage object for monitoring vales;
   
   /////////////////////////////////////////////////////////////////
+
+  //////////////////////////////// a generic plot /////////////////
+  // Monitoring can plot how something changes with respect to time, but what
+  // if you want a generic plot to appear on the web page? Use this class.
+  /////////////////////////////////////////////////////////////////
+  Plot plot { "test_plot" };
+  plot.x.resize(10);
+  for (size_t i = 0; i < plot.x.size(); ++i) plot.x[i] = i;
+  plot.y.resize(plot.x.size());
+  plot.title = "A random plot";
+  plot.xlabel = "x";
+  plot.ylabel = "y";
+  // plot.info stores a generic JSON. It is not processed by ToolDAQ and can be used to attach extra information to a plot.
+  plot.info.Set("comment", "example plot"); // -> { "comment": "example plot" }
   
   /////////////////////////// program operation //////////////////////
   
@@ -332,6 +346,10 @@ int main(){
       
       //////////////////////////////////////////////////////////////////////////////////////////
       
+      ////////////////////////////////////// plot /////////////////////////////////////////////
+      for (auto& y : plot.y) y = rand();
+      DAQ_inter.SendPlot(plot);
+      //////////////////////////////////////////////////////////////////////////////////////////
       
       ///////////////////////  using and getting slow control values /////////////// 
       

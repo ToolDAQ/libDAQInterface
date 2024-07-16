@@ -77,9 +77,8 @@ bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::
   
 }
 
-bool DAQInterface::GetPlot(){
-  // placeholder for evgenii
-  return true;
+bool DAQInterface::GetPlot(const std::string& name, Plot& plot, unsigned timeout){
+  return m_services->GetPlot(name, plot, timeout);
 }
 
 bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>* responses, const unsigned int timeout){
@@ -132,11 +131,8 @@ bool DAQInterface::SendTemporaryROOTplot(const std::string& plot_name, const std
   
 }
 
-bool DAQInterface::SendPlot(){
-  
-  // placeholder for evgenii
-  
-  return true;
+bool DAQInterface::SendPlot(Plot& plot, unsigned timeout){
+  return m_services->SendPlot(plot, timeout);
 }
 
 // ===========================================================================
