@@ -186,7 +186,7 @@ int main(){
   int version=-1; //version of configuration to get; -1 to get the latest
   
   std::cout<<"Getting configuration settings from database"<<std::endl;
-  bool ok = DAQ_inter.GetConfig(config_json, version); //get configuration from database
+  bool ok = DAQ_inter.GetDeviceConfig(config_json, version); //get configuration from database
   
   // check we got a valid configuration back.
   if(!ok || config_json==""){
@@ -213,7 +213,7 @@ int main(){
     configuration>>config_json; //output current configuration to json
     
     if(verbose) std::cout<<"sending configuration json '"<<config_json<<"' to database"<<std::endl;
-    DAQ_inter.SendConfig(config_json, "John Doe", "My New Config"); //uplaod configuration to database
+    DAQ_inter.SendDeviceConfig(config_json, "John Doe", "My New Config"); //uplaod configuration to database
     
   } else{
     

@@ -47,9 +47,15 @@ bool DAQInterface::SendCalibrationData(const std::string& json_data, const std::
   
 }
 
-bool DAQInterface::SendConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device, unsigned int timestamp, int* version, const unsigned int timeout){
+bool DAQInterface::SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device, unsigned int timestamp, int* version, const unsigned int timeout){
   
-  return m_services->SendConfig(json_data, author, description, device, timestamp, version, timeout);
+  return m_services->SendDeviceConfig(json_data, author, description, device, timestamp, version, timeout);
+  
+}
+
+bool DAQInterface::SendRunConfig(const std::string& json_data, const std::string& name, const std::string& author, const std::string& description, unsigned int timestamp, int* version, const unsigned int timeout){
+  
+  return m_services->SendRunConfig(json_data, name, author, description, timestamp, version, timeout);
   
 }
 
@@ -63,10 +69,33 @@ bool DAQInterface::GetCalibrationData(std::string& json_data, int version, const
   
 }
 
-bool DAQInterface::GetConfig(std::string& json_data, int version, const std::string& device, const unsigned int timeout){
+bool DAQInterface::GetDeviceConfig(std::string& json_data, int version, const std::string& device, const unsigned int timeout){
   
+  return m_services->GetDeviceConfig(json_data, version, device, timeout);
   
-  return m_services->GetConfig(json_data, version, device, timeout);
+}
+
+bool DAQInterface::GetRunConfig(std::string& json_data, int config_id, const unsigned int timeout){
+  
+  return m_services->GetRunConfig(json_data, config_id, timeout);
+  
+}
+
+bool DAQInterface::GetRunConfig(std::string& json_data, const std::string& name, int version, const unsigned int timeout){
+  
+  return m_services->GetRunConfig(json_data, name, version, timeout);
+  
+}
+
+bool DAQInterface::GetDeviceConfigFromRunConfig(std::string& json_data, const int runconfig_id, const std::string& device, const unsigned int timeout){
+  
+  return m_services->GetRunDeviceConfig(json_data, runconfig_id, device, nullptr, timeout);
+  
+}
+
+bool DAQInterface::GetDeviceConfigFromRunConfig(std::string& json_data, const std::string& runconfig_name, const int runconfig_version, const std::string& device, const unsigned int timeout){
+  
+  return m_services->GetRunDeviceConfig(json_data, runconfig_name, runconfig_version, device, nullptr, timeout);
   
 }
 
