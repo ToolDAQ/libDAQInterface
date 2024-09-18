@@ -1,4 +1,4 @@
-UUID 1234-abdc-2345-fghi		# unique identifier for client
+UUID b16a0186-c5df-474c-b880-9fc6c0670d7d  # unique identifier for client (must be valid uuid)
 device_name Example 			# name of devices
 verbosity 1 				# Verbosity level of interface
 db_name daq                     	#

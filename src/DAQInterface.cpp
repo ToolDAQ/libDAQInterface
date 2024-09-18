@@ -107,7 +107,10 @@ bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::
 }
 
 bool DAQInterface::GetPlot(const std::string& name, Plot& plot, unsigned timeout){
+  
+  
   return m_services->GetPlot(name, plot, timeout);
+  
 }
 
 bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>* responses, const unsigned int timeout){
@@ -117,10 +120,10 @@ bool DAQInterface::SQLQuery(const std::string& database, const std::string& quer
   
 }
 
-bool DAQInterface::SQLQuery(const std::string& query, const std::string& database, std::string* response, const unsigned int timeout){
+bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::string* response, const unsigned int timeout){
   
   
-  return m_services->SQLQuery(query, database, response, timeout);
+  return m_services->SQLQuery(database, query, response, timeout);
 }
 
 // ===========================================================================

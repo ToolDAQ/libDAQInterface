@@ -273,6 +273,20 @@ int main(){
   // plot.info stores a generic JSON. It is not processed by ToolDAQ and can be used to attach extra information to a plot.
   plot.info.Set("comment", "example plot"); // -> { "comment": "example plot" }
   
+  /////////////////////////// generic SQL query example //////////////////////
+  
+  std::string resp;
+  // single-record query
+  bool qryok = DAQ_inter.SQLQuery("daq","SELECT config_id, name, version, data FROM configurations",&resp);
+  std::cout<<"single-record query success: "<<qryok<<", response: '"<<resp<<"'"<<std::endl;
+  // response will be of form '{"config_id":"4", "name":"potato", "version":"0", "data":"{"my_device": 5}"}'
+  
+  // for multi-record queries
+  std::vector<std::string> resps;
+  qryok = DAQ_inter.SQLQuery("daq","SELECT device, version, data FROM device_config",&resps);
+  std::cout<<"multi-record query success: "<<qryok<<", responses:"<<std::endl;
+  for(int i=0; i<std::min(resps.size(),5); ++i) std::cout<<i<<": '"<<resp<<"'"<<std::endl;
+  
   /////////////////////////// program operation //////////////////////
   
   bool running=true;
