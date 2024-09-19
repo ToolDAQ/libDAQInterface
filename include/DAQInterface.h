@@ -25,8 +25,9 @@ namespace ToolFramework {
     DAQInterface(std::string configuration_file);
     ~DAQInterface();
     
-    bool SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>* responses=nullptr, const unsigned int timeout=300);
-    bool SQLQuery(const std::string& database, const std::string& query, std::string* response=nullptr, const unsigned int timeout=300);
+    bool SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>& responses, const unsigned int timeout=300);
+    bool SQLQuery(const std::string& database, const std::string& query, std::string& response, const unsigned int timeout=300);
+    bool SQLQuery(const std::string& database, const std::string& query, const unsigned int timeout=300);
     
     bool SendLog(const std::string& message, unsigned int severity=2, const std::string& device="", const unsigned int timestamp=0); //serverity levels are 0 = critical, 1 = Error, 2 = warning, 3= info , 4-9 debug
     bool SendAlarm(const std::string& message, unsigned int level=0, const std::string& device="", const unsigned int timestamp=0, const unsigned int timeout=300);

@@ -113,17 +113,23 @@ bool DAQInterface::GetPlot(const std::string& name, Plot& plot, unsigned timeout
   
 }
 
-bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>* responses, const unsigned int timeout){
+bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>& responses, const unsigned int timeout){
   
   
   return m_services->SQLQuery(database, query, responses, timeout);
   
 }
 
-bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::string* response, const unsigned int timeout){
+bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::string& response, const unsigned int timeout){
   
   
   return m_services->SQLQuery(database, query, response, timeout);
+}
+
+bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, const unsigned int timeout){
+  
+  return m_services->SQLQuery(database, query, timeout);
+  
 }
 
 // ===========================================================================

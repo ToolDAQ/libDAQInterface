@@ -8,7 +8,10 @@ import ctypes
 # streamline accessing std namespace
 std = cppyy.gbl.std
 # pull in classes from the libDAQInterface
-cppyy.load_reflection_info('libDAQInterfaceClassDict')
+try:
+  cppyy.load_reflection_info('libDAQInterfaceClassDict')
+except:
+  raise BaseException("class dictionary not found: did you run 'make python'?") from None
 from cppyy.gbl import ToolFramework
 from cppyy.gbl.ToolFramework import DAQInterface
 
@@ -49,17 +52,16 @@ class AutomatedFunctions:
     ret = control_name+" set to "+str(new_voltage)+"V"
     return ret
   
-
 if __name__ == "__main__":
   
   # configuration
-  device_name = "my_device"
   Interface_configfile = "./InterfaceConfig"
   #database_name = "daq"
   
   print("Initialising daqinterface")
   # initialise DAQInterface
   DAQ_inter = DAQInterface(Interface_configfile)
+  device_name = DAQ_inter.GetDeviceName()
   automated_functions = AutomatedFunctions(DAQ_inter, device_name)
   
   # set initial status so we can track when the service is ready
@@ -171,7 +173,7 @@ if __name__ == "__main__":
   print("Querying DB")
   version=-1  # use version -1 to get the latest version
   config_json=std.string("")
-  ok = DAQ_inter.GetConfig(config_json, version)
+  ok = DAQ_inter.GetDeviceConfig(config_json, version)
   
   # a Store class instance can parse a JSON string to more easily access settings
   # and can generate a JSON string from contents set by a series of simple 'Set' calls
@@ -193,13 +195,19 @@ if __name__ == "__main__":
                             # and may lead to errors when passed to later Get/Set calls!
     configuration.Set("power_on", power_on)
     configuration.Set("voltage_1", DAQ_inter.sc_vars["voltage_1"].GetValue['float']())
-    configuration.Set("voltage_2", 4000)
+    # due to the way cppyy prioritises function overloads over templates, Store::Set<int>
+    # does not work the way it should, instead storing a vector<string> of size equal to
+    # the number you're trying to store (4000, in the following example)
+    # While we try to figure out how to work around this, either explicitly specify the type:
+    configuration.Set['int']("voltage_2", 4000)
+    # or use floating point numbers when passing literals to Store::Set
+    configuration.Set("voltage_2", 4000.)
     
     configuration.__rshift__['std::string'](config_json)
     
     # uplaod configuration to the database
     print("sending new config_json: '",config_json,"'")
-    DAQ_inter.SendConfig(config_json, "DemoAuthor", "Demo Description")
+    DAQ_inter.SendDeviceConfig(config_json, "DemoAuthor", "Demo Description")
     
   else:
     
@@ -227,6 +235,25 @@ if __name__ == "__main__":
       # and report this to the logging database
       DAQ_inter.SendLog("voltage_2 not set in configuration version "+str(version), 0, device_name)
     
+
+  ###############################################################
+  #######           querying the database                 #######
+  ###############################################################
+  
+  print("testing generic sql queries")
+  # single-record query
+  resp = std.string()
+  qryok = DAQ_inter.SQLQuery("daq","SELECT config_id, name, version, data FROM configurations",resp)
+  print("single-record query success: ",qryok,", response: '",resp,"'")
+  
+  # for multi-record queries
+  resps = std.vector['std::string']()
+  qryok = DAQ_inter.SQLQuery("daq","SELECT device, version, data FROM device_config",resps)
+  print("multi-record query success: ",qryok,", responses:")
+  for i in range(min(5,resps.size())):
+     print(i,": '",resps[i],"'")
+  if resps.size() > 5:
+     print("...\n")
   
   ###############################################################
   #######                  Main Program Loop              #######
@@ -238,10 +265,17 @@ if __name__ == "__main__":
   monitoring_data = cppyy.gbl.ToolFramework.Store()
   
   running = True
+  last_started = True;
+  started = False;
+  
   DAQ_inter.sc_vars["Status"].SetValue("Ready")
   
   while running:
     
+    if last_started==True and started==False:
+      print("Waiting for user to click 'Start' or 'Quit'...")
+    
+    # update quit check
     running=(not DAQ_inter.sc_vars["Quit"].GetValue['bool']())
     
     # check for Start control being clicked
@@ -260,6 +294,7 @@ if __name__ == "__main__":
       # reset the 'Start' button, so that we can accept new presses
       DAQ_inter.sc_vars["Start"].SetValue(False)
       
+    last_started = started;
     
     while started:
       
@@ -335,7 +370,7 @@ if __name__ == "__main__":
     
     #print("outer sleep")
     time.sleep(1)
-  
+    
   # end of program loop
   print("end main loop")
   
