@@ -106,11 +106,9 @@ bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::
   
 }
 
-bool DAQInterface::GetPlot(const std::string& name, Plot& plot, unsigned timeout){
-  
-  
-  return m_services->GetPlot(name, plot, timeout);
-  
+bool DAQInterface::GetPlotlyPlot(const std::string& name, int& version, std::string& trace, std::string& layout, unsigned int* timestamp, unsigned int timeout) {
+
+  return m_services->GetPlotlyPlot(name, version, trace, layout, timestamp, timeout);
 }
 
 bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>& responses, const unsigned int timeout){
@@ -169,8 +167,8 @@ bool DAQInterface::SendTemporaryROOTplot(const std::string& plot_name, const std
   
 }
 
-bool DAQInterface::SendPlot(Plot& plot, unsigned timeout){
-  return m_services->SendPlot(plot, timeout);
+bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::string& trace, const std::string& layout, int* version, unsigned int timestamp, unsigned int timeout) {
+  return m_services->SendPlotlyPlot(name, trace, layout, version, timestamp, timeout);
 }
 
 // ===========================================================================

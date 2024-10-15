@@ -259,20 +259,23 @@ int main(){
   
   /////////////////////////////////////////////////////////////////
 
-  //////////////////////////////// a generic plot /////////////////
+  //////////////////////////////// a Plotly plot /////////////////
   // Monitoring can plot how something changes with respect to time, but what
   // if you want a generic plot to appear on the web page? Use this class.
   /////////////////////////////////////////////////////////////////
-  Plot plot { "test_plot" };
-  plot.x.resize(10);
-  for (size_t i = 0; i < plot.x.size(); ++i) plot.x[i] = i;
-  plot.y.resize(plot.x.size());
-  plot.title = "A random plot";
-  plot.xlabel = "x";
-  plot.ylabel = "y";
-  // plot.info stores a generic JSON. It is not processed by ToolDAQ and can be used to attach extra information to a plot.
-  plot.info.Set("comment", "example plot"); // -> { "comment": "example plot" }
-  
+  Store plot_trace;
+
+  std::vector<float> plot_x(10);
+  for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
+  plot_trace.Set("x", plot_x);
+
+  std::string plot_layout = "{"
+    "\"title\":\"A random plot\","
+    "\"xaxis\":{\"title\":\"x\"},"
+    "\"yaxis\":{\"title\":\"y\"}"
+  "}";
+
+  std::vector<float> plot_y(plot_x.size()); // see below
   /////////////////////////// generic SQL query example //////////////////////
   
   std::string resp;
@@ -362,8 +365,13 @@ int main(){
       //////////////////////////////////////////////////////////////////////////////////////////
       
       ////////////////////////////////////// plot /////////////////////////////////////////////
-      for (auto& y : plot.y) y = rand();
-      DAQ_inter.SendPlot(plot);
+      for (auto& y : plot_y) y = rand();
+      plot_trace.Set("y", plot_y);
+
+      std::string json_trace;
+      plot_trace >> json_trace;
+
+      DAQ_inter.SendPlotlyPlot("test_plot", json_trace, plot_layout);
       //////////////////////////////////////////////////////////////////////////////////////////
       
       ///////////////////////  using and getting slow control values /////////////// 
