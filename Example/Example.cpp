@@ -263,11 +263,8 @@ int main(){
   // Monitoring can plot how something changes with respect to time, but what
   // if you want a generic plot to appear on the web page? Use this class.
   /////////////////////////////////////////////////////////////////
-  Store plot_trace;
-
-  std::vector<float> plot_x(10);
+  std::vector<float> plot_x(5);
   for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
-  plot_trace.Set("x", plot_x);
 
   std::string plot_layout = "{"
     "\"title\":\"A random plot\","
@@ -365,13 +362,22 @@ int main(){
       //////////////////////////////////////////////////////////////////////////////////////////
       
       ////////////////////////////////////// plot /////////////////////////////////////////////
-      for (auto& y : plot_y) y = rand();
-      plot_trace.Set("y", plot_y);
+      {
+        std::vector<std::string> traces(2);
 
-      std::string json_trace;
-      plot_trace >> json_trace;
+        for (auto& y : plot_y) y = rand();
+        Store store;
+        store.Set("x", plot_x);
+        store.Set("y", plot_y);
+        store >> traces[0];
 
-      DAQ_inter.SendPlotlyPlot("test_plot", json_trace, plot_layout);
+        for (auto& y : plot_y) y = rand();
+        store.Set("x", plot_x);
+        store.Set("y", plot_y);
+        store >> traces[1];
+
+        DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
+      };
       //////////////////////////////////////////////////////////////////////////////////////////
       
       ///////////////////////  using and getting slow control values /////////////// 

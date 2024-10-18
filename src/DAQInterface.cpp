@@ -171,6 +171,10 @@ bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::string& tr
   return m_services->SendPlotlyPlot(name, trace, layout, version, timestamp, timeout);
 }
 
+bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::vector<std::string>& traces, const std::string& layout, int* version, unsigned int timestamp, unsigned int timeout) {
+  return m_services->SendPlotlyPlot(name, traces, layout, version, timestamp, timeout);
+}
+
 // ===========================================================================
 // Other functions
 // ---------------
