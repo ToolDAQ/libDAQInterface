@@ -309,6 +309,27 @@ int main(){
       DAQ_inter.sc_vars["Start"]->SetValue(false);  // important! reset the slow control value after use.
       
       DAQ_inter.sc_vars.AlertSend("new_event"); // example of sending alert to all DAQ devices
+
+      ////////////////////////////////////// plot /////////////////////////////////////////////
+      /// Each plot is stored in the database as a different version. We place
+      /// this example here to avoid sending a new plot each second.
+      {
+        std::vector<std::string> traces(2);
+
+        for (auto& y : plot_y) y = rand();
+        Store store;
+        store.Set("x", plot_x);
+        store.Set("y", plot_y);
+        store >> traces[0];
+
+        for (auto& y : plot_y) y = rand();
+        store.Set("x", plot_x);
+        store.Set("y", plot_y);
+        store >> traces[1];
+
+        DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
+      };
+      //////////////////////////////////////////////////////////////////////////////////////////
       
     }
     last_started = started;
@@ -359,25 +380,6 @@ int main(){
       // send to the database
       DAQ_inter.SendMonitoringData(monitoring_json);
       
-      //////////////////////////////////////////////////////////////////////////////////////////
-      
-      ////////////////////////////////////// plot /////////////////////////////////////////////
-      {
-        std::vector<std::string> traces(2);
-
-        for (auto& y : plot_y) y = rand();
-        Store store;
-        store.Set("x", plot_x);
-        store.Set("y", plot_y);
-        store >> traces[0];
-
-        for (auto& y : plot_y) y = rand();
-        store.Set("x", plot_x);
-        store.Set("y", plot_y);
-        store >> traces[1];
-
-        DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
-      };
       //////////////////////////////////////////////////////////////////////////////////////////
       
       ///////////////////////  using and getting slow control values /////////////// 
