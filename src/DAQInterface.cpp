@@ -8,10 +8,16 @@ DAQInterface::DAQInterface(std::string configuration_file){
   if(!vars.Get("device_name",m_name)) m_name = "unnamed";
   vars.Set("service_name",m_name);
 
-  
+  boost::uuids::uuid m_UUID;
+  std::string s_uuid;
+  if(vars.Get("UUID",s_uuid)){
+    m_UUID = boost::uuids::string_generator{}(s_uuid);
+  } else {
+    m_UUID = boost::uuids::random_generator()();
+  }
   
   m_context = new zmq::context_t(1);
-  mp_SD = new ServiceDiscovery(true, false, 60000, "239.192.1.1", 5000, m_context, boost::uuids::random_generator()(), m_name, 5, 60);
+  mp_SD = new ServiceDiscovery(true, false, 60000, "239.192.1.1", 5000, m_context,m_UUID, m_name, 5, 60);
   
   m_services= new Services();
   m_services->Init(vars, m_context, &sc_vars);
