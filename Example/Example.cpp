@@ -259,20 +259,20 @@ int main(){
   
   /////////////////////////////////////////////////////////////////
 
-  //////////////////////////////// a generic plot /////////////////
+  //////////////////////////////// a Plotly plot /////////////////
   // Monitoring can plot how something changes with respect to time, but what
   // if you want a generic plot to appear on the web page? Use this class.
   /////////////////////////////////////////////////////////////////
-  Plot plot { "test_plot" };
-  plot.x.resize(10);
-  for (size_t i = 0; i < plot.x.size(); ++i) plot.x[i] = i;
-  plot.y.resize(plot.x.size());
-  plot.title = "A random plot";
-  plot.xlabel = "x";
-  plot.ylabel = "y";
-  // plot.info stores a generic JSON. It is not processed by ToolDAQ and can be used to attach extra information to a plot.
-  plot.info.Set("comment", "example plot"); // -> { "comment": "example plot" }
-  
+  std::vector<float> plot_x(5);
+  for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
+
+  std::string plot_layout = "{"
+    "\"title\":\"A random plot\","
+    "\"xaxis\":{\"title\":\"x\"},"
+    "\"yaxis\":{\"title\":\"y\"}"
+  "}";
+
+  std::vector<float> plot_y(plot_x.size()); // see below
   /////////////////////////// generic SQL query example //////////////////////
   
   std::string resp;
@@ -309,6 +309,27 @@ int main(){
       DAQ_inter.sc_vars["Start"]->SetValue(false);  // important! reset the slow control value after use.
       
       DAQ_inter.sc_vars.AlertSend("new_event"); // example of sending alert to all DAQ devices
+
+      ////////////////////////////////////// plot /////////////////////////////////////////////
+      /// Each plot is stored in the database as a different version. We place
+      /// this example here to avoid sending a new plot each second.
+      {
+        std::vector<std::string> traces(2);
+
+        for (auto& y : plot_y) y = rand();
+        Store store;
+        store.Set("x", plot_x);
+        store.Set("y", plot_y);
+        store >> traces[0];
+
+        for (auto& y : plot_y) y = rand();
+        store.Set("x", plot_x);
+        store.Set("y", plot_y);
+        store >> traces[1];
+
+        DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
+      };
+      //////////////////////////////////////////////////////////////////////////////////////////
       
     }
     last_started = started;
@@ -359,11 +380,6 @@ int main(){
       // send to the database
       DAQ_inter.SendMonitoringData(monitoring_json);
       
-      //////////////////////////////////////////////////////////////////////////////////////////
-      
-      ////////////////////////////////////// plot /////////////////////////////////////////////
-      for (auto& y : plot.y) y = rand();
-      DAQ_inter.SendPlot(plot);
       //////////////////////////////////////////////////////////////////////////////////////////
       
       ///////////////////////  using and getting slow control values /////////////// 
