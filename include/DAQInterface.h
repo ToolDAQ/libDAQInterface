@@ -45,8 +45,9 @@ namespace ToolFramework {
     bool SendTemporaryROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version=nullptr, const int64_t timestamp=0);
     bool SendPersistentROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version=nullptr, const int64_t timestamp=0, const unsigned int timeout=300);
     bool GetROOTplot(const std::string& plot_name, int& version, std::string& draw_option, std::string& json_data, std::string* timestamp=nullptr, const unsigned int timeout=300);
-    bool SendPlot(Plot& plot, unsigned timeout=300);
-    bool GetPlot(const std::string& name, Plot& plot, unsigned timeout=300);
+    bool SendPlotlyPlot(const std::string& name, const std::string& json_trace, const std::string& json_layout="{}", int* version=nullptr, unsigned int timestamp=0, unsigned int timeout=300);
+    bool SendPlotlyPlot(const std::string& name, const std::vector<std::string>& json_traces, const std::string& json_layout="{}", int* version=nullptr, unsigned int timestamp=0, unsigned int timeout=300);
+    bool GetPlotlyPlot(const std::string& name, int& version, std::string& json_trace, std::string& json_layout, unsigned int* timestamp=nullptr, unsigned int timeout=300);
     
     SlowControlCollection* GetSlowControlCollection();
     SlowControlElement* GetSlowControlVariable(std::string key);
