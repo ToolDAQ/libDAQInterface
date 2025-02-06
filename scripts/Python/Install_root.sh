@@ -62,14 +62,14 @@ fi
 # first determine what kind of OS we're on.
 REDHATLIKE=$(yum --version >/dev/null 2>&1; echo $?)
 DEBIANLIKE=$(dpkg --version >/dev/null 2>&1; echo $?)
-NEEDDEPS=""
+unset NEEDDEPS
 if [ ${REDHATLIKE} -eq 0 ]; then
 	echo "red-hat based OS"
 	# red-hat based OS.
 	# trigger yum to update its metadata
 	echo "updating yum metadata..."
 	yum list installed >/dev/null 2>&1
-	DEPS=(git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel)
+	DEPS=(wget git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel)
 	# centos7 requires cmake3 from epel
 	RHVER=$(grep "VERSION_ID" /etc/os-release | cut -d\" -f2)
 	RHOLD=$(echo -e "8\n${RHVER}" | sort -V -C; echo $?)
@@ -89,7 +89,7 @@ if [ ${REDHATLIKE} -eq 0 ]; then
 		GOTDEP=$(yum list installed 2>/dev/null | grep "${DEP}" >/dev/null 2>&1; echo $?)
 		if [ ${GOTDEP} -ne 0 ]; then
 			echo "not found"
-			NEEDDEPS="${NEEDDEPS} ${DEP}"
+			NEEDDEPS=( ${NEEDDEPS} ${DEP} )
 		fi
 	done
 elif [ ${DEBIANLIKE} -eq 0 ]; then
@@ -101,7 +101,7 @@ elif [ ${DEBIANLIKE} -eq 0 ]; then
 		GOTDEP=$(dpkg --list | grep "${DEP}" >/dev/null 2>&1; echo $?)
 		if [ ${GOTDEP} -ne 0 ]; then
 			echo "not found"
-			NEEDDEPS="${NEEDDEPS} ${DEP}"
+			NEEDDEPS=( ${NEEDDEPS} ${DEP} )
 		fi
 	done
 else
@@ -169,7 +169,7 @@ else
 								exit 1;
 							else
 								echo "Attempting installation assuming dependencies are installed"
-								NEEDDEPS=""
+								unset NEEDDEPS
 								break;
 							fi
 						else
@@ -184,7 +184,9 @@ else
 						if [[ " ${NEEDDEPS[*]} " =~ " epel-release " ]]; then
 							yum install -y "epel-release"
 						fi
-						yum install -y ${NEEDDEPS}
+      						for DEP in "${NEEDDEPS[@]}"; do echo "${DEP}";
+							yum install -y ${DEP}
+       						done
 						INSTALLOK=$?
 					elif [ ${DEBIANLIKE} -eq 0 ]; then
 						apt-get install -y ${NEEDDEPS}
