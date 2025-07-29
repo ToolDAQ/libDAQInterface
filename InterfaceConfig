@@ -13,5 +13,6 @@ clt_dlr_socket_timeout 500		#
 inpoll_timeout 50      			# keep these short!
 outpoll_timeout 50 	 		# keep these short!
 command_timeout 2000			#
-multicast_port 55554			#
+log_port 55554				#
+mon_port 55553				#
 multicast_address 239.192.1.1		#

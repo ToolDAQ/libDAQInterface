@@ -89,9 +89,9 @@ int main(){
   ///////////////////////////////// logging alarms and alerts ///////////////////////////////
   
   std::cout<<"Testing logging..."<<std::flush;
-  DAQ_inter.SendLog("unimportant message", 9, device_name);   //sending log message to database specifing severity and device name
+  DAQ_inter.SendLog("severity 2 message", 2, device_name);   //sending log message to database specifing severity and device name
   DAQ_inter.SendLog("important message", 0, device_name);
-  DAQ_inter.SendLog("normal message");   // if not specified, the default severity level is 2 and the default name is the one passed to the DAQInterface constructor
+  DAQ_inter.SendLog("unimportant message");   // if not specified, the default severity level is 9 and the default name is the one passed to the DAQInterface constructor
   if(verbose) std::cout<<"Logs sent"<<std::endl;
   
   std::cout<<"Sending test alarm..."<<std::flush;
@@ -261,18 +261,34 @@ int main(){
 
   //////////////////////////////// a Plotly plot /////////////////
   // Monitoring can plot how something changes with respect to time, but what
-  // if you want a generic plot to appear on the web page? Use this class.
+  // if you want to make a specific plot to appear on the web page? Use this class.
+  // Each submitted plot with the same name is stored in the database as a different version. 
   /////////////////////////////////////////////////////////////////
   std::vector<float> plot_x(5);
   for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
-
+  std::vector<float> plot_y(plot_x.size());
+  for (auto& y : plot_y) y = rand();
+  
   std::string plot_layout = "{"
     "\"title\":\"A random plot\","
     "\"xaxis\":{\"title\":\"x\"},"
     "\"yaxis\":{\"title\":\"y\"}"
   "}";
-
-  std::vector<float> plot_y(plot_x.size()); // see below
+  
+  std::vector<std::string> traces(2);
+  
+  Store store;
+  store.Set("x", plot_x);
+  store.Set("y", plot_y);
+  store >> traces[0];
+  
+  for (auto& y : plot_y) y = rand();
+  store.Set("x", plot_x);
+  store.Set("y", plot_y);
+  store >> traces[1];
+  
+  DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
+  
   /////////////////////////// generic SQL query example //////////////////////
   
   std::string resp;
@@ -309,27 +325,6 @@ int main(){
       DAQ_inter.sc_vars["Start"]->SetValue(false);  // important! reset the slow control value after use.
       
       DAQ_inter.sc_vars.AlertSend("new_event"); // example of sending alert to all DAQ devices
-
-      ////////////////////////////////////// plot /////////////////////////////////////////////
-      /// Each plot is stored in the database as a different version. We place
-      /// this example here to avoid sending a new plot each second.
-      {
-        std::vector<std::string> traces(2);
-
-        for (auto& y : plot_y) y = rand();
-        Store store;
-        store.Set("x", plot_x);
-        store.Set("y", plot_y);
-        store >> traces[0];
-
-        for (auto& y : plot_y) y = rand();
-        store.Set("x", plot_x);
-        store.Set("y", plot_y);
-        store >> traces[1];
-
-        DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
-      };
-      //////////////////////////////////////////////////////////////////////////////////////////
       
     }
     last_started = started;
@@ -378,7 +373,10 @@ int main(){
       monitoring_data>>monitoring_json; /// prducing monitoring json 
       
       // send to the database
-      DAQ_inter.SendMonitoringData(monitoring_json);
+      bool ok = DAQ_inter.SendMonitoringData("general", monitoring_json);
+      if(!ok){
+      	std::cerr<<"sendmonitoringdata failed"<<std::endl;
+      }
       
       //////////////////////////////////////////////////////////////////////////////////////////
       

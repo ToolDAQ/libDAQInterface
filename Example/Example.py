@@ -75,10 +75,10 @@ if __name__ == "__main__":
   # send a log message to the database, specifing severity and device name
   # severity 0 is critical, higher numbers => lower severity
   DAQ_inter.SendLog("important message", 0, device_name)
-  DAQ_inter.SendLog("unimportant message", 9, device_name)
-  # we may omit the severity and/or logging source, in which case a default severity of 2 will be used,
+  DAQ_inter.SendLog("severity 2 message", 2, device_name)
+  # we may omit the severity and/or logging source, in which case a default severity of 9 will be used,
   # and the logging source will be the device name we passed to the DAQInterface constructor
-  DAQ_inter.SendLog("normal message")
+  DAQ_inter.SendLog("unimportant message")
   # the signature for sending alarms is the same as logging messages
   DAQ_inter.SendAlarm("High current on channel 3", 0, device_name)
   
@@ -336,7 +336,7 @@ if __name__ == "__main__":
       monitoring_data.__rshift__['std::string'](monitoring_json)
       
       # send to the Database for plotting on the webpage
-      DAQ_inter.SendMonitoringData(monitoring_json)
+      DAQ_inter.SendMonitoringData("general", monitoring_json)
       
       # retrieve and respond to control changes
       ###########################################
