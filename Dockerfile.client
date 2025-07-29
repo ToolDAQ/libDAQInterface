@@ -28,4 +28,7 @@ RUN cd / \
     && make Example/Example_root
 
 
-CMD /bin/bash -c "cd /web && . Setup.sh && ./Example/Example"
+CMD /bin/bash -c "cd /opt/ToolFrameworkCore && git pull && make clean && make -j$(nproc) && \
+                  cd /opt/ToolDAQFramework && git pull && make clean && make -j$(nproc) && \
+                  cd /web && if [ ! -f Dependencies ]; then ln -s /opt ./Dependencies; fi && \
+                  cd /web && . Setup.sh && make clean && make && ./Example/Example"
