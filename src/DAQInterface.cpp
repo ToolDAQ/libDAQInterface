@@ -146,10 +146,10 @@ bool DAQInterface::SendLog(const std::string& message, unsigned int severity, co
   
 }
 
-bool DAQInterface::SendMonitoringData(const std::string& json_data, const std::string& device, int64_t timestamp){
+bool DAQInterface::SendMonitoringData(const std::string& json_data, const std::string& subject, const std::string& device, int64_t timestamp){
   
   
-  return m_services->SendMonitoringData(json_data, device, timestamp);
+  return m_services->SendMonitoringData(json_data, subject, device, timestamp);
   
 }
 
