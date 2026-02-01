@@ -336,7 +336,7 @@ if __name__ == "__main__":
       monitoring_data.__rshift__['std::string'](monitoring_json)
       
       # send to the Database for plotting on the webpage
-      DAQ_inter.SendMonitoringData("general", monitoring_json)
+      DAQ_inter.SendMonitoringData(monitoring_json, "general")
       
       # retrieve and respond to control changes
       ###########################################

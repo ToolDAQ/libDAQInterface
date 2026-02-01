@@ -373,7 +373,7 @@ int main(){
       monitoring_data>>monitoring_json; /// prducing monitoring json 
       
       // send to the database
-      bool ok = DAQ_inter.SendMonitoringData("general", monitoring_json);
+      bool ok = DAQ_inter.SendMonitoringData(monitoring_json, "general");
       if(!ok){
       	std::cerr<<"sendmonitoringdata failed"<<std::endl;
       }
