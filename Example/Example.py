@@ -243,12 +243,12 @@ if __name__ == "__main__":
   print("testing generic sql queries")
   # single-record query
   resp = std.string()
-  qryok = DAQ_inter.SQLQuery("daq","SELECT config_id, name, version, data FROM configurations",resp)
+  qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 1",resp)
   print("single-record query success: ",qryok,", response: '",resp,"'")
   
   # for multi-record queries
   resps = std.vector['std::string']()
-  qryok = DAQ_inter.SQLQuery("daq","SELECT device, version, data FROM device_config",resps)
+  qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 5",resps)
   print("multi-record query success: ",qryok,", responses:")
   for i in range(min(5,resps.size())):
      print(i,": '",resps[i],"'")

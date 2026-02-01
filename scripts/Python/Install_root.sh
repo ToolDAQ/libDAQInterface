@@ -69,7 +69,7 @@ if [ ${REDHATLIKE} -eq 0 ]; then
 	# trigger yum to update its metadata
 	echo "updating yum metadata..."
 	yum list installed >/dev/null 2>&1
-	DEPS=(wget git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel)
+	DEPS=(wget git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel patch)
 	# centos7 requires cmake3 from epel
 	RHVER=$(grep "VERSION_ID" /etc/os-release | cut -d\" -f2)
 	RHOLD=$(echo -e "8\n${RHVER}" | sort -V -C; echo $?)
@@ -118,7 +118,7 @@ else
 				exit 1;
 			else
 				echo "Attempting installation assuming dependencies are installed";
-				NEEDDEPS=""
+				unset NEEDDEPS
 				break;
 			fi
 		else
@@ -148,11 +148,11 @@ if [ $(which g++ &> /dev/null; echo $?) -eq 0 ]; then
 	fi
 fi
 
-if [ -z "${NEEDDEPS}" ]; then
+if [ -z "${NEEDDEPS[*]}" ]; then
 	echo "All system dependencies satisfied, continuing"
 else
 	echo "The following system dependencies were not found on your system"
-	echo "${NEEDDEPS}"
+	echo "${NEEDDEPS[*]}"
 	# if we're run as root, offer to install them
 	if [ "$(whoami)" == "root" ]; then
 		echo "Install these packages?"

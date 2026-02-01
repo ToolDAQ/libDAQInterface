@@ -41,25 +41,25 @@ DAQInterface::~DAQInterface(){
 // Write Functions
 // ---------------
 
-bool DAQInterface::SendAlarm(const std::string& message, unsigned int level, const std::string& device, int64_t timestamp, const unsigned int timeout){
+bool DAQInterface::SendAlarm(const std::string& message, unsigned int level, const std::string& device, const uint64_t timestamp, const unsigned int timeout){
   
   return m_services->SendAlarm(message, level, device, timestamp, timeout);
   
 }
 
-bool DAQInterface::SendCalibrationData(const std::string& json_data, const std::string& description, const std::string& device, int64_t timestamp, int* version, const unsigned int timeout){
+bool DAQInterface::SendCalibrationData(const std::string& json_data, const std::string& description, const std::string& device, const uint64_t timestamp, int* version, const unsigned int timeout){
   
   return m_services->SendCalibrationData(json_data, description, device, timestamp, version, timeout);
   
 }
 
-bool DAQInterface::SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device, int64_t timestamp, int* version, const unsigned int timeout){
+bool DAQInterface::SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device, const uint64_t timestamp, int* version, const unsigned int timeout){
   
   return m_services->SendDeviceConfig(json_data, author, description, device, timestamp, version, timeout);
   
 }
 
-bool DAQInterface::SendRunConfig(const std::string& json_data, const std::string& name, const std::string& author, const std::string& description, int64_t timestamp, int* version, const unsigned int timeout){
+bool DAQInterface::SendRunConfig(const std::string& json_data, const std::string& name, const std::string& author, const std::string& description, const uint64_t timestamp, int* version, const unsigned int timeout){
   
   return m_services->SendRunConfig(json_data, name, author, description, timestamp, version, timeout);
   
@@ -105,34 +105,51 @@ bool DAQInterface::GetDeviceConfigFromRunConfig(std::string& json_data, const st
   
 }
 
-bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::string& draw_options, std::string& json_data, std::string* timestamp, const unsigned int timeout){
+bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::string& draw_options, std::string& json_data, const unsigned int timeout){
   
-  
-  return m_services->GetROOTplot(plot_name, version, draw_options, json_data, timestamp, timeout);
-  
-}
-
-bool DAQInterface::GetPlotlyPlot(const std::string& name, int& version, std::string& trace, std::string& layout, unsigned int* timestamp, unsigned int timeout) {
-
-  return m_services->GetPlotlyPlot(name, version, trace, layout, timestamp, timeout);
-}
-
-bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>& responses, const unsigned int timeout){
-  
-  
-  return m_services->SQLQuery(database, query, responses, timeout);
+  return m_services->GetROOTplot(plot_name, version, draw_options, json_data, timeout);
   
 }
 
-bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, std::string& response, const unsigned int timeout){
+bool DAQInterface::GetPlotlyPlot(const std::string& name, int& version, std::string& trace, std::string& layout, /*unsigned int* timestamp,*/ unsigned int timeout) {
+
+  //std::string timestring;
+  bool ok = m_services->GetPlotlyPlot(name, version, trace, layout, /*&timestring,*/ timeout);
   
+  /*
+  // FIXME do we need to support this? would need to be added to backend as well
+  // for consistency, return timestamp in unix ms, same units as clients send them...
+  if(!ok) return ok;
+  if(timestamp){
+    struct tm stm{0};
+    char* startptr = strptime(timestring.c_str(), "%F %T", &stm);
+    time_t t = mktime(&stm);
+    double frac_secs = 0;
+    if(timestring.length()>19) frac_secs = strtod(startptr, nullptr);
+    timestamp = t*1000. + frac_secs*1000.;
+  }
+  */
   
-  return m_services->SQLQuery(database, query, response, timeout);
+  return ok;
+
 }
 
-bool DAQInterface::SQLQuery(const std::string& database, const std::string& query, const unsigned int timeout){
+bool DAQInterface::SQLQuery(/*const std::string& database,*/ const std::string& query, std::vector<std::string>& responses, const unsigned int timeout){
   
-  return m_services->SQLQuery(database, query, timeout);
+  
+  return m_services->SQLQuery(/*database,*/ query, responses, timeout);
+  
+}
+
+bool DAQInterface::SQLQuery(/*const std::string& database,*/ const std::string& query, std::string& response, const unsigned int timeout){
+  
+  
+  return m_services->SQLQuery(/*database,*/ query, response, timeout);
+}
+
+bool DAQInterface::SQLQuery(/*const std::string& database,*/ const std::string& query, const unsigned int timeout){
+  
+  return m_services->SQLQuery(/*database,*/ query, timeout);
   
 }
 
@@ -140,45 +157,45 @@ bool DAQInterface::SQLQuery(const std::string& database, const std::string& quer
 // Multicast Senders
 // -----------------
 
-bool DAQInterface::SendLog(const std::string& message, unsigned int severity, const std::string& device, int64_t timestamp){
+bool DAQInterface::SendLog(const std::string& message, unsigned int severity, const std::string& device, const uint64_t timestamp){
     
   return m_services->SendLog(message, severity, device, timestamp);
   
 }
 
-bool DAQInterface::SendMonitoringData(const std::string& json_data, const std::string& subject, const std::string& device, int64_t timestamp){
-  
+bool DAQInterface::SendMonitoringData(const std::string& subject, const std::string& json_data, const std::string& device, const uint64_t timestamp){
   
   return m_services->SendMonitoringData(json_data, subject, device, timestamp);
   
 }
 
-// wrapper to send a root plot either to a temporary table or a persistent one
-bool DAQInterface::SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, bool persistent, int* version, const int64_t timestamp, const unsigned int timeout){
-  if(!persistent) return SendTemporaryROOTplot(plot_name, draw_options, json_data, version, timestamp);
-  return SendPersistentROOTplot(plot_name, draw_options, json_data, version, timestamp, timeout);
+// wrapper to send a root plot either over multicast or zmq
+bool DAQInterface::SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, bool acknowledged, const uint64_t timestamp, const unsigned int lifetime, const unsigned int timeout){
+  if(!acknowledged) return SendROOTplotMulticast(plot_name, draw_options, json_data, lifetime, timestamp);
+  return SendROOTplotZmq(plot_name, draw_options, json_data, nullptr, timestamp, lifetime, timeout);
 }
 
-// send to persistent table over TCP
-bool DAQInterface::SendPersistentROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version, const int64_t timestamp, const unsigned int timeout){
+// send over zmq
+bool DAQInterface::SendROOTplotZmq(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version, const uint64_t timestamp, const unsigned int lifetime, const unsigned int timeout){
   
-  return m_services->SendPersistentROOTplot(plot_name, draw_options, json_data, version, timestamp, timeout);
-  
-}
-
-// send to temporary table over multicast
-bool DAQInterface::SendTemporaryROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version, const int64_t timestamp){
-  
-  return m_services->SendTemporaryROOTplot(plot_name, draw_options, json_data, version, timestamp);
+  return m_services->SendROOTplotZmq(plot_name, draw_options, json_data, version, timestamp, lifetime, timeout);
   
 }
 
-bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::string& trace, const std::string& layout, int* version, unsigned int timestamp, unsigned int timeout) {
-  return m_services->SendPlotlyPlot(name, trace, layout, version, timestamp, timeout);
+// send over multicast
+bool DAQInterface::SendROOTplotMulticast(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, const unsigned int lifetime, const uint64_t timestamp){
+  
+  return m_services->SendROOTplotMulticast(plot_name, draw_options, json_data, lifetime, timestamp);
+  
 }
 
-bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::vector<std::string>& traces, const std::string& layout, int* version, unsigned int timestamp, unsigned int timeout) {
-  return m_services->SendPlotlyPlot(name, traces, layout, version, timestamp, timeout);
+// FIXME for now plotlyplots always go over zmq
+bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::string& trace, const std::string& layout, int* version, const uint64_t timestamp, const unsigned int lifetime, unsigned int timeout) {
+  return m_services->SendPlotlyPlot(name, trace, layout, version, timestamp, lifetime, timeout);
+}
+
+bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::vector<std::string>& traces, const std::string& layout, int* version, const uint64_t timestamp, const unsigned int lifetime, unsigned int timeout) {
+  return m_services->SendPlotlyPlot(name, traces, layout, version, timestamp, lifetime, timeout);
 }
 
 // ===========================================================================

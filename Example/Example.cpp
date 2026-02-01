@@ -265,19 +265,13 @@ int main(){
   // Each submitted plot with the same name is stored in the database as a different version. 
   /////////////////////////////////////////////////////////////////
   std::vector<float> plot_x(5);
-  for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
   std::vector<float> plot_y(plot_x.size());
-  for (auto& y : plot_y) y = rand();
+  for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
   
-  std::string plot_layout = "{"
-    "\"title\":\"A random plot\","
-    "\"xaxis\":{\"title\":\"x\"},"
-    "\"yaxis\":{\"title\":\"y\"}"
-  "}";
-  
+  Store store; // for conversion to JSON
   std::vector<std::string> traces(2);
   
-  Store store;
+  for (auto& y : plot_y) y = rand();
   store.Set("x", plot_x);
   store.Set("y", plot_y);
   store >> traces[0];
@@ -287,6 +281,12 @@ int main(){
   store.Set("y", plot_y);
   store >> traces[1];
   
+  std::string plot_layout = "{"
+    "\"title\":\"A random plot\","
+    "\"xaxis\":{\"title\":\"x\"},"
+    "\"yaxis\":{\"title\":\"y\"}"
+  "}";
+  
   DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
   
   /////////////////////////// generic SQL query example //////////////////////
@@ -294,12 +294,12 @@ int main(){
   std::string resp;
   std::cout<<"Testing submitting generic SQL queries"<<std::endl;
   // single-record query
-  bool qryok = DAQ_inter.SQLQuery("daq","SELECT config_id, name, version, data FROM configurations",resp);
+  bool qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 1",resp);
   std::cout<<"single-record query success: "<<qryok<<", response: '"<<resp<<"'"<<std::endl;
   
   // for multi-record queries
   std::vector<std::string> resps;
-  qryok = DAQ_inter.SQLQuery("daq","SELECT version, data FROM device_config WHERE device='"+device_name+"'",resps);
+  qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 5",resps);
   std::cout<<"multi-record query success: "<<qryok<<", got "<<resps.size()<<" records:"<<std::endl;
   for(int i=0; i<std::min(resps.size(),size_t(5)); ++i) std::cout<<i<<": '"<<resps.at(i)<<"'"<<std::endl;
   if(resps.size()>5) std::cout<<"...\n"<<std::endl;

@@ -68,21 +68,13 @@ int main(int argc, const char** argv){
 	std::string graph_name = "TotallyCoolSine";
 	std::string graph_draw_options = "ALP";
 	
-	// each time the same unique name is inserted, a new version of the plot is stored.
-	// when saving a new version over TCP we may optionally pass a pointer to an integer,
-	// which will be populated with the version number of the created entry.
-	int graph_db_ver=0;
-	
 	// store it in the database
-	bool persistent=true; // TODO
-	// For now this setting only affects whether the request is sent over multicast (false, default) or tcp (true)
-	// At a later date we may add the option for plots to only be stored in a temporary table.
-	std::cout<<"Sending to database via TCP"<<std::endl;
-	bool ok = DAQ_inter.SendROOTplot(graph_name, graph_draw_options, graph_json, persistent, &graph_db_ver);
+	std::cout<<"Sending to database"<<std::endl;
+	bool ok = DAQ_inter.SendROOTplot(graph_name, graph_draw_options, graph_json);
 	if(!ok){
 		std::cerr<<"Error sending plot '"<<graph_name<<"' to database!"<<std::endl;
 	} else {
-		std::cout<<"Created plot '"<<graph_name<<"' version "<<graph_db_ver<<std::endl;
+		std::cout<<"Sent OK"<<std::endl;
 	}
 	
 	// Another example, this time storing a TH2.
@@ -101,13 +93,26 @@ int main(int argc, const char** argv){
 	// and specify the draw options
 	std::string hist_draw_options = "colz";
 	
-	// send to the database. We omit the optional arguments this time.
+	// Each time a plot with the same name as an existing plot is inserted, it makes a new version of that plot.
+	// The 'lifetime' parameter (default=5) defines how long it plots are to be retained in the database.
+	// When a new version of a given plot is created, any existing plots of the same name
+	// that have a (version+lifetime) less than the version number of the new plot will be pruned.
+	// This behaviour may be subject to change: feedback to the DAQ group is welcome!
+	// N.B. pruning is presently not functional as it is likely to be a separate background task.
+	int lifetime=3;
+	
+	// ROOT plots may be sent either via ZMQ or multicast (the 'acknowledged' argument in SendROOTplot).
+	// If SendROOTplotZmq is used explicitly (acknowledged=1) you may pass a version number argument
+	// that will be set to the version number of the newly created entry.
+	int db_ver=0;
+	
+	// send to the database
 	std::cout<<"Sending to database via multicast"<<std::endl;
-	ok = DAQ_inter.SendROOTplot(histo_name, hist_draw_options, hist_json);
+	ok = DAQ_inter.SendROOTplotZmq(histo_name, hist_draw_options, hist_json, db_ver, 0, lifetime);
 	if(!ok){
 		std::cerr<<"Error sending plot '"<<histo_name<<"' to database!"<<std::endl;
 	} else {
-		std::cout<<"Sent OK"<<std::endl;
+		std::cout<<"Created plot version "<<db_ver<<std::endl;
 	}
 	
 	// ============================================================= //
@@ -148,10 +153,9 @@ int main(int argc, const char** argv){
 	// repeat for the histogram
 	std::string ret_hist_draw_options;
 	std::string ret_hist_json;
-	int ret_hist_version=-1;
-	std::cout<<"Getting latest version of plot "<<histo_name<<std::endl;
-	ok = DAQ_inter.GetROOTplot(histo_name, ret_hist_version, ret_hist_draw_options, ret_hist_json);
-	if(!ok) std::cerr<<"Failed to get ROOT plot '"<<histo_name<<"' from database!"<<std::endl;
+	std::cout<<"Getting version "<<db_ver<<" of plot "<<histo_name<<std::endl;
+	ok = DAQ_inter.GetROOTplot(histo_name, db_ver, ret_hist_draw_options, ret_hist_json);
+	if(!ok) std::cerr<<"Failed to get ROOT plot '"<<histo_name<<"' version "<<db_ver<<" from database!"<<std::endl;
 	else std::cout<<"Converting to TH2"<<std::endl;
 	
 	// This time we use an alternative FromJSON signature using raw pointers instead of unique_ptr:
