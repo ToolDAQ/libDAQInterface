@@ -47,11 +47,11 @@ Example/Example_root: Example/Example_root.cpp lib/libDAQInterface.so
 	g++ $(CXXFLAGS) $(RootFlags) $^ -o $@ -I ./include/ -L lib/ -lDAQInterface -lpthread $(ToolDAQInclude) $(ToolFrameworkInclude) $(BoostInclude) $(ZMQInclude) $(ToolFrameworkLib) $(ToolDAQLib) $(ZMQLib) $(BoostLib) $(RootLib)
 
 # this is required ONLY if you want to run the python example, or use the libDAQInterface in python
-python: lib/libDAQInterfaceClassDict.so
+python: lib/libDAQInterface.so lib/libDAQInterfaceClassDict.so
 
 lib/libDAQInterfaceClassDict.so: include/DAQInterface.h include/DAQInterfaceLinkdef.h
 	rootcling -f src/DAQInterfaceClassDict.cpp -c -p -rmf lib/libDAQInterfaceClassDict.rootmap $^ -I ./include/ $(ToolFrameworkInclude) $(ToolDAQInclude) $(BoostInclude) $(ZMQInclude)
-	g++ -shared -fPIC src/DAQInterfaceClassDict.cpp -o $@ -I ./ -I ./include/ $(ToolFrameworkInclude) $(ToolDAQInclude) $(BoostInclude) $(ZMQInclude) $(RootInclude) -L lib -lDAQInterface $(RootLib)
+	g++ -shared $(CXXFLAGS) -fPIC src/DAQInterfaceClassDict.cpp -o $@ -I ./ -I ./include/ $(ToolFrameworkInclude) $(ToolDAQInclude) $(BoostInclude) $(ZMQInclude) $(RootInclude) -L lib -lDAQInterface $(RootLib)
 	cp src/DAQInterfaceClassDict_rdict.pcm lib/
 # end python requirements
 
@@ -59,5 +59,12 @@ RemoteControl: $(Dependencies)/ToolDAQFramework/src/RemoteControl/RemoteControl.
 	g++ $(CXXFLAGS) $(Dependencies)/ToolDAQFramework/src/RemoteControl/RemoteControl.cpp -o RemoteControl  -I ./include/ -L lib/ -lDAQInterface -lpthread $(BoostInclude) $(BoostLib) $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(ToolDAQInclude) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(ToolDAQLib) $(BoostLib)
 
 clean:
-	rm -f lib/libDAQInterface.so RemoteControl Win_Mac_translation Example/Example Example/Example_root
+	rm -f lib/libDAQInterface.so \
+	RemoteControl \
+	Win_Mac_translation \
+	Example/Example \
+	Example/Example_root \
+	lib/DAQInterfaceClassDict_rdict.pcm \
+	lib/libDAQInterfaceClassDict.rootmap \
+	lib/libDAQInterfaceClassDict.so
 
