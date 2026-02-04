@@ -37,7 +37,8 @@ namespace ToolFramework {
     bool SendAlarm(const std::string& message, unsigned int level=0, const std::string& device="", const uint64_t timestamp=0, const unsigned int timeout=default_timeout);
     bool SendMonitoringData(const std::string& json_data, const std::string& subject, const std::string& device="", const uint64_t timestamp=0);
     bool SendCalibrationData(const std::string& json_data, const std::string& description, const std::string& device="", const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
-    bool GetCalibrationData(std::string& json_data, int version=-1, const std::string& device="", const unsigned int timeout=default_timeout);
+    bool GetCalibrationData(std::string& json_data, int& version, const std::string& device="", const unsigned int timeout=default_timeout);
+    bool GetCalibrationData(std::string& json_data, int&& version=-1, const std::string& device="", const unsigned int timeout=default_timeout);
     bool SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device="", const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
     bool SendRunConfig(const std::string& json_data, const std::string& name, const std::string& author, const std::string& description, const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
     bool GetDeviceConfig(std::string& json_data, const int version, const std::string& device="", const unsigned int timeout=default_timeout);
@@ -48,10 +49,12 @@ namespace ToolFramework {
     bool SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, bool acknowledged=true, const uint64_t timestamp=0, const unsigned int lifetime=5, const unsigned int timeout=default_timeout);
     bool SendROOTplotMulticast(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, const unsigned int lifetime=5, const uint64_t timestamp=0);
     bool SendROOTplotZmq(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version=nullptr, const uint64_t timestamp=0, const unsigned int lifetime=5, const unsigned int timeout=default_timeout);
-    bool GetROOTplot(const std::string& plot_name, int& version, std::string& draw_option, std::string& json_data, const unsigned int timeout=default_timeout);
+    bool GetROOTplot(const std::string& plot_name, std::string& draw_option, std::string& json_data, int& version, const unsigned int timeout=default_timeout);
+    bool GetROOTplot(const std::string& plot_name, std::string& draw_option, std::string& json_data, int&& version=-1, const unsigned int timeout=default_timeout);
     bool SendPlotlyPlot(const std::string& name, const std::string& json_trace, const std::string& json_layout="{}", int* version=nullptr, const uint64_t timestamp=0, const unsigned int lifetime=5, unsigned int timeout=default_timeout);
     bool SendPlotlyPlot(const std::string& name, const std::vector<std::string>& json_traces, const std::string& json_layout="{}", int* version=nullptr, const uint64_t timestamp=0, const unsigned int lifetime=5, unsigned int timeout=default_timeout);
-    bool GetPlotlyPlot(const std::string& name, int& version, std::string& json_trace, std::string& json_layout, unsigned int timeout=default_timeout);
+    bool GetPlotlyPlot(const std::string& name, std::string& json_trace, std::string& json_layout, int& version, unsigned int timeout=default_timeout);
+    bool GetPlotlyPlot(const std::string& name, std::string& json_trace, std::string& json_layout, int&& version=-1, unsigned int timeout=default_timeout);
     
     SlowControlCollection* GetSlowControlCollection();
     SlowControlElement* GetSlowControlVariable(std::string key);

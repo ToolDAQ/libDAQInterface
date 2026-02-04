@@ -30,7 +30,7 @@ sources= $(filter-out  %DAQInterfaceClassDict.cpp, $(wildcard src/*.cpp) $(wildc
 
 debug: all
 
-all: lib/libDAQInterface.so Win_Mac_translation Example/Example RemoteControl
+all: lib/libDAQInterface.so Win_Mac_translation Example/Example Example/Test RemoteControl
 
 lib/libDAQInterface.so: $(sources)
 	g++ $(CXXFLAGS) -fPIC -shared src/DAQInterface.cpp -I include -o lib/libDAQInterface.so -lpthread  $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(ToolDAQInclude) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(BoostLib)
@@ -48,6 +48,10 @@ Example/Example_root: Example/Example_root.cpp lib/libDAQInterface.so
 
 # this is required ONLY if you want to run the python example, or use the libDAQInterface in python
 python: lib/libDAQInterface.so lib/libDAQInterfaceClassDict.so
+
+# functionality testing
+Example/Test: Example/Test.cpp lib/libDAQInterface.so
+	g++ $(CXXFLAGS) $^ -o $@ -I ./include/ -L lib/ -lDAQInterface -lpthread $(ToolDAQInclude) $(ToolDAQLib) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(BoostLib) $(ToolDAQLib)
 
 lib/libDAQInterfaceClassDict.so: include/DAQInterface.h include/DAQInterfaceLinkdef.h
 	rootcling -f src/DAQInterfaceClassDict.cpp -c -p -rmf lib/libDAQInterfaceClassDict.rootmap $^ -I ./include/ $(ToolFrameworkInclude) $(ToolDAQInclude) $(BoostInclude) $(ZMQInclude)

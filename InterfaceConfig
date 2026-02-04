@@ -1,17 +1,17 @@
-UUID b16a0186-c5df-474c-b880-9fc6c0670d7d  # unique identifier for client (must be valid uuid)
-device_name Example 			# name of devices
-verbosity 1 				# Verbosity level of interface
-max_retries 3				#	
-resend_period_ms 1000			#
-print_stats_period_ms 1000		#
-clt_pub_port 55556    			#
-clt_dlr_port 55555			#
-clt_pub_socket_timeout 500		#	
-clt_dlr_socket_timeout 500		#
-inpoll_timeout 50      			# keep these short!
-outpoll_timeout 50 			# keep these short!
-command_timeout 2000			#
-log_port 5000				#
-mon_port 5000				#
-log_address 239.192.1.2			#
-mon_address 239.192.1.3			#
+UUID b16a0186-c5df-474c-b880-9fc6c0670d7d   # unique identifier for client (must be valid uuid)
+device_name Example                         # name of devices
+verbosity 1                                 # Verbosity level of interface
+max_retries 3                               #        
+resend_period_ms 1000                       #
+print_stats_period_ms 1000                  #
+clt_pub_port 55556                          #
+clt_dlr_port 55555                          #
+clt_pub_socket_timeout 500                  #        
+clt_dlr_socket_timeout 500                  #
+inpoll_timeout 50                           # keep these short!
+outpoll_timeout 50                          # keep these short!
+command_timeout 2000                        #
+log_port 5000                               #
+mon_port 5000                               #
+log_address 239.192.1.2                     #
+mon_address 239.192.1.3                     #

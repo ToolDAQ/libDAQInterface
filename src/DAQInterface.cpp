@@ -69,8 +69,14 @@ bool DAQInterface::SendRunConfig(const std::string& json_data, const std::string
 // Read Functions
 // --------------
 
-bool DAQInterface::GetCalibrationData(std::string& json_data, int version, const std::string& device, const unsigned int timeout){
+bool DAQInterface::GetCalibrationData(std::string& json_data, int& version, const std::string& device, const unsigned int timeout){
   
+  return m_services->GetCalibrationData(json_data, version, device, timeout);
+  
+}
+
+bool DAQInterface::GetCalibrationData(std::string& json_data, int&& version, const std::string& device, const unsigned int timeout){
+
   return m_services->GetCalibrationData(json_data, version, device, timeout);
   
 }
@@ -105,33 +111,28 @@ bool DAQInterface::GetDeviceConfigFromRunConfig(std::string& json_data, const st
   
 }
 
-bool DAQInterface::GetROOTplot(const std::string& plot_name, int& version, std::string& draw_options, std::string& json_data, const unsigned int timeout){
+bool DAQInterface::GetROOTplot(const std::string& plot_name, std::string& draw_options, std::string& json_data, int& version, const unsigned int timeout){
   
-  return m_services->GetROOTplot(plot_name, version, draw_options, json_data, timeout);
+  return m_services->GetROOTplot(plot_name, draw_options, json_data, version, timeout);
   
 }
 
-bool DAQInterface::GetPlotlyPlot(const std::string& name, int& version, std::string& trace, std::string& layout, /*unsigned int* timestamp,*/ unsigned int timeout) {
-
-  //std::string timestring;
-  bool ok = m_services->GetPlotlyPlot(name, version, trace, layout, /*&timestring,*/ timeout);
+bool DAQInterface::GetROOTplot(const std::string& plot_name, std::string& draw_options, std::string& json_data, int&& version, const unsigned int timeout){
   
-  /*
-  // FIXME do we need to support this? would need to be added to backend as well
-  // for consistency, return timestamp in unix ms, same units as clients send them...
-  if(!ok) return ok;
-  if(timestamp){
-    struct tm stm{0};
-    char* startptr = strptime(timestring.c_str(), "%F %T", &stm);
-    time_t t = mktime(&stm);
-    double frac_secs = 0;
-    if(timestring.length()>19) frac_secs = strtod(startptr, nullptr);
-    timestamp = t*1000. + frac_secs*1000.;
-  }
-  */
+  return m_services->GetROOTplot(plot_name, draw_options, json_data, version, timeout);
   
-  return ok;
+}
 
+bool DAQInterface::GetPlotlyPlot(const std::string& name, std::string& trace, std::string& layout, int& version, unsigned int timeout) {
+
+  return m_services->GetPlotlyPlot(name, trace, layout, version, timeout);
+  
+}
+
+bool DAQInterface::GetPlotlyPlot(const std::string& name, std::string& trace, std::string& layout, int&& version, unsigned int timeout) {
+
+  return m_services->GetPlotlyPlot(name, trace, layout, version, timeout);
+  
 }
 
 bool DAQInterface::SQLQuery(/*const std::string& database,*/ const std::string& query, std::vector<std::string>& responses, const unsigned int timeout){
