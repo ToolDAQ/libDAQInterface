@@ -89,9 +89,9 @@ int main(){
   ///////////////////////////////// logging alarms and alerts ///////////////////////////////
   
   std::cout<<"Testing logging..."<<std::flush;
-  DAQ_inter.SendLog("severity 2 message", 2, device_name);   //sending log message to database specifing severity and device name
-  DAQ_inter.SendLog("important message", 0, device_name);
-  DAQ_inter.SendLog("unimportant message");   // if not specified, the default severity level is 9 and the default name is the one passed to the DAQInterface constructor
+  DAQ_inter.SendLog("error message", LogLevel::Error, device_name);   //sending log message to database specifing severity and device name
+  DAQ_inter.SendLog("warning message", LogLevel::Warning, device_name); // LogLevels include: Error, Warning, Message, Debug, Debug1, Debug2, Debug3
+  DAQ_inter.SendLog("normal logging message");   // if not specified, the default severity level is 'Messge' and the default name is the one passed to the DAQInterface constructor
   if(verbose) std::cout<<"Logs sent"<<std::endl;
   
   std::cout<<"Sending test alarm..."<<std::flush;
@@ -243,7 +243,7 @@ int main(){
     DAQ_inter.sc_vars["voltage_2"]->SetValue(voltage_2);
     
     // or we may take alternative action such as logging an error
-    if(!configuration.Get("voltage_3", voltage_3)) DAQ_inter.SendLog("voltage3 not set", 0, device_name); //sends log message if not in configuration
+    if(!configuration.Get("voltage_3", voltage_3)) DAQ_inter.SendLog("voltage3 not set", LogLevel::Error, device_name); //sends log message if not in configuration
     else DAQ_inter.sc_vars["voltage_3"]->SetValue(voltage_3);
     
   }

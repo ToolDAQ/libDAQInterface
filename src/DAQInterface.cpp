@@ -36,6 +36,11 @@ DAQInterface::~DAQInterface(){
   
 }
 
+void DAQInterface::SetVerbose(bool in){
+	m_verbose=in;
+	return;
+}
+
 
 // ===========================================================================
 // Write Functions
@@ -87,9 +92,9 @@ bool DAQInterface::GetRunConfig(std::string& json_data, const int base_config_id
   
 }
 
-bool DAQInterface::GetRunConfig(std::string& json_data, const std::string& name, int version, const unsigned int timeout){
+bool DAQInterface::GetRunModeConfig(std::string& json_data, const std::string& name, int version, const unsigned int timeout){
   
-  return m_services->GetRunConfig(json_data, name, version, timeout);
+  return m_services->GetRunModeConfig(json_data, name, version, timeout);
   
 }
 
@@ -99,11 +104,13 @@ bool DAQInterface::GetDeviceConfigFromRunConfig(std::string& json_data, const in
   
 }
 
+/*
 bool DAQInterface::GetDeviceConfigFromRunConfig(std::string& json_data, const std::string& runconfig_name, const int runconfig_version, const std::string& device, const unsigned int timeout){
   
   return m_services->GetRunDeviceConfig(json_data, runconfig_name, runconfig_version, device, nullptr, timeout);
   
 }
+*/
 
 bool DAQInterface::GetROOTplot(const std::string& plot_name, std::string& draw_options, std::string& json_data, int& version, const unsigned int timeout){
   

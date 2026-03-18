@@ -42,10 +42,10 @@ namespace ToolFramework {
     bool SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device="", const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
     bool GetDeviceConfig(std::string& json_data, const int version, const std::string& device="", const unsigned int timeout=default_timeout);
     bool GetRunConfig(std::string& json_data, const int base_config_id, const int runmode_config_id, const unsigned int timeout=default_timeout);
-    bool GetRunConfig(std::string& json_data, const std::string& name, const int version, const unsigned int timeout=default_timeout);
+    bool GetRunModeConfig(std::string& json_data, const std::string& name, const int version, const unsigned int timeout=default_timeout);
     bool GetDeviceConfigFromRunConfig(std::string& json_data, const int base_config_id, const int runmode_config_id, const std::string& device="", const unsigned int timeout=default_timeout);
-    bool GetDeviceConfigFromRunConfig(std::string& json_data, const std::string& runconfig_name, const int runconfig_version, const std::string& device="", const unsigned int timeout=default_timeout);
-    bool SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, const uint64_t timestamp=0, const unsigned int lifetime=5, const unsigned int timeout=default_timeout);
+    //bool GetDeviceConfigFromRunConfig(std::string& json_data, const std::string& runconfig_name, const int runconfig_version, const std::string& device="", const unsigned int timeout=default_timeout);
+    bool SendROOTplot(const std::string& plot_name, const std::string& draw_options, const std::string& json_data, int* version=nullptr, const uint64_t timestamp=0, const unsigned int lifetime=5, const unsigned int timeout=default_timeout);
     bool GetROOTplot(const std::string& plot_name, std::string& draw_option, std::string& json_data, int& version, const unsigned int timeout=default_timeout);
     bool GetROOTplot(const std::string& plot_name, std::string& draw_option, std::string& json_data, int&& version=-1, const unsigned int timeout=default_timeout);
     bool SendPlotlyPlot(const std::string& name, const std::string& json_trace, const std::string& json_layout="{}", int* version=nullptr, const uint64_t timestamp=0, const unsigned int lifetime=5, unsigned int timeout=default_timeout);
@@ -64,6 +64,7 @@ namespace ToolFramework {
     
     std::string PrintSlowControlVariables();
     std::string GetDeviceName();
+    void SetVerbose(bool in);
     
     template<typename T> T GetSlowControlValue(std::string name){
       return sc_vars[name]->GetValue<T>();
@@ -78,6 +79,7 @@ namespace ToolFramework {
     ServiceDiscovery* mp_SD;
     Store vars;
     std::string m_name;
+    bool m_verbose;
     
     
   };
