@@ -71,12 +71,12 @@ int main(){
 	int runmode_id=-1;
 	Store mystore;
 	try {
-		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM base_config WHERE name='"+device_name+"' AND version=1 ) THEN "
+		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM base_config WHERE name='"+device_name+"' AND version=0 ) THEN "
 		        "INSERT INTO base_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":2}' ); "
 		        "END IF; END $$ ";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(!ok) std::cerr<<"error inserting base config"<<std::endl;
-		query = "SELECT config_id FROM base_config WHERE name='"+device_name+"' AND version=1";
+		query = "SELECT config_id FROM base_config WHERE name='"+device_name+"' AND version=0";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(ok){
 			mystore.JsonParser(tmp);
@@ -86,12 +86,12 @@ int main(){
 		} else {
 			std::cerr<<"error fetching base_config_id"<<std::endl;
 		}
-		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM runmode_config WHERE name='"+device_name+"' AND version=1 ) THEN "
+		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM runmode_config WHERE name='"+device_name+"' AND version=0 ) THEN "
 		        "INSERT INTO runmode_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":3}' ); "
 		        "END IF; END $$ ";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(!ok) std::cerr<<"error inserting runmode config"<<std::endl;
-		query = "SELECT config_id FROM runmode_config WHERE name='"+device_name+"' AND version=1";
+		query = "SELECT config_id FROM runmode_config WHERE name='"+device_name+"' AND version=0";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(ok){
 			mystore.JsonParser(tmp);
@@ -112,7 +112,7 @@ int main(){
 	
 	// N.B: this is not a full detector configuration
 	if(verbose) std::cout<<"Getting test runmode config by name & version..."<<std::flush;
-	ok = DAQ_inter.GetRunModeConfig(tmp, device_name, 1);
+	ok = DAQ_inter.GetRunModeConfig(tmp, device_name, 0);
 	if(!ok || verbose) std::cout<<"Get run config (by name): "<<Check(ok)<<" = "<<tmp<<Reset<<std::endl;
 	
 	if(verbose) std::cout<<"Getting test device config by run id {"<<base_id<<","<<runmode_id<<"}..."<<std::flush;
