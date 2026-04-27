@@ -18,6 +18,7 @@ int main(){
 	
 	DAQInterface DAQ_inter(Interface_configfile);
 	DAQ_inter.SetVerbose(true);
+	
 	//std::this_thread::sleep_for(std::chrono::seconds(2)); // sleep for a little longer, connecting is slow
 	std::string device_name = DAQ_inter.GetDeviceName();
 	std::string tmp;
@@ -51,8 +52,9 @@ int main(){
 	if(!ok) std::cout<<Check(ok)<<"Error inserting test device: "<<tmp<<Reset<<std::endl;
 	
 	// these may fail if the above failed... but we don't expect it to...
-	if(verbose) std::cout<<"Sending test device config..."<<std::flush;
+	if(verbose) std::cout<<"Sending test device configs..."<<std::flush;
 	ok = DAQ_inter.SendDeviceConfig("{\"device settings\":[3,2,1]}","test user","test dev config");
+	ok = ok && DAQ_inter.SendDeviceConfig("{\"device settings\":[5,6,7]}","test user","test dev config");
 	if(!ok || verbose) std::cout<<"Send device config: "<<Check(ok)<<Reset<<std::endl;
 	
 	if(verbose) std::cout<<"Getting test device config..."<<std::flush;
@@ -72,7 +74,7 @@ int main(){
 	Store mystore;
 	try {
 		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM base_config WHERE name='"+device_name+"' AND version=0 ) THEN "
-		        "INSERT INTO base_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":2}' ); "
+		        "INSERT INTO base_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":0}' ); "
 		        "END IF; END $$ ";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(!ok) std::cerr<<"error inserting base config"<<std::endl;
@@ -87,7 +89,7 @@ int main(){
 			std::cerr<<"error fetching base_config_id"<<std::endl;
 		}
 		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM runmode_config WHERE name='"+device_name+"' AND version=0 ) THEN "
-		        "INSERT INTO runmode_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":3}' ); "
+		        "INSERT INTO runmode_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":1}' ); "
 		        "END IF; END $$ ";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(!ok) std::cerr<<"error inserting runmode config"<<std::endl;
@@ -118,6 +120,8 @@ int main(){
 	if(verbose) std::cout<<"Getting test device config by run id {"<<base_id<<","<<runmode_id<<"}..."<<std::flush;
 	ok = DAQ_inter.GetDeviceConfigFromRunConfig(tmp,  base_id, runmode_id);
 	if(!ok || verbose) std::cout<<"Get device config (by run config id): "<<Check(ok)<<" = "<<tmp<<Reset<<std::endl;
+	// if there was already an 'Example' config in the DB, this might have returned something different...
+	if(tmp!="{\"device settings\":[5,6,7]}") std::cerr<<"warning: expected '{\"device settings\":[5,6,7]}'"<<std::endl;
 	
 	/* - not currently supported, no plans to reimplement presently.
 	if(verbose) std::cout<<"Getting test device config by run name and version..."<<std::flush;
@@ -152,7 +156,7 @@ int main(){
 		std::cout<<Reset;
 	}
 	
-	if(verbose) std::cout<<"Sending bad SQL query ..."<<Reset<<std::endl;
+	if(verbose) std::cout<<"Sending bad SQL query (expected to fail)..."<<Reset<<std::endl;
 	ok = DAQ_inter.SQLQuery("SELECT potato, message FROM logging ORDER BY time DESC LIMIT 1",tmp);
 	if(!ok || verbose) std::cout<<"Running bad SQL query returned: "<<Check(ok)<<" = "<<tmp<<Reset<<std::endl;
 	
