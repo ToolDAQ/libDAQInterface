@@ -34,7 +34,7 @@ int main(){
 	bool ok;
 	
 	Store m_variables;
-	m_variables.Initialise("./SpamConfig");
+	m_variables.Initialise("./Test2Config");
 	int log_period_ms=0;
 	int mon_period_ms=0;
 	int alarm_period_ms=0;
