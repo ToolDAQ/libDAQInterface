@@ -30,7 +30,7 @@ sources= $(filter-out  %DAQInterfaceClassDict.cpp, $(wildcard src/*.cpp) $(wildc
 
 debug: all
 
-all: lib/libDAQInterface.so Win_Mac_translation Example/Example Example/Test RemoteControl
+all: lib/libDAQInterface.so Win_Mac_translation Example/Example Testing/Test RemoteControl
 
 lib/libDAQInterface.so: $(sources)
 	g++ $(CXXFLAGS) -fPIC -shared src/DAQInterface.cpp -I include -o lib/libDAQInterface.so -lpthread  $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(ToolDAQInclude) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(BoostLib)
@@ -50,11 +50,11 @@ Example/Example_root: Example/Example_root.cpp lib/libDAQInterface.so
 python: lib/libDAQInterface.so lib/libDAQInterfaceClassDict.so
 
 # functionality testing
-Example/Test: Example/Test.cpp lib/libDAQInterface.so
+Testing/Test: Testing/Test.cpp lib/libDAQInterface.so
 	g++ $(CXXFLAGS) $^ -o $@ -I ./include/ -L lib/ -lDAQInterface -lpthread $(ToolDAQInclude) $(ToolDAQLib) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(BoostLib) $(ToolDAQLib)
 
 # throttle testing
-Example/Test2: Example/Test2.cpp lib/libDAQInterface.so
+Testing/Test2: Testing/Test2.cpp lib/libDAQInterface.so
 	g++ $(CXXFLAGS) $^ -o $@ -I ./include/ -L lib/ -lDAQInterface -lpthread $(ToolDAQInclude) $(ToolDAQLib) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(BoostLib) $(ToolDAQLib)
 
 lib/libDAQInterfaceClassDict.so: include/DAQInterface.h include/DAQInterfaceLinkdef.h
