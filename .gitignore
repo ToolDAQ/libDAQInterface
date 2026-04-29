@@ -14,5 +14,7 @@ NodeDaemon
 RemoteControl
 Example/Example
 Example/Example_root
+Example/Test
+Example/Test2
 Win_Mac_translation
-core
+core.*

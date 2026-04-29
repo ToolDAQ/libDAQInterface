@@ -17,7 +17,7 @@
 #include <Services.h>
 
 namespace {
-  const unsigned int default_timeout=300;
+  const unsigned int default_timeout=0;
 }
 
 namespace ToolFramework {

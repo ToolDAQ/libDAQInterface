@@ -2,8 +2,8 @@
 UUID b16a0186-c5df-474c-b880-9fc6c0670d7d   # unique identifier for client (must be valid uuid)
 device_name Example                         # name of devices
 services_backend_verbosity 1                # verbosity level of backend MM communication
-clt_pub_port 55556                          # local port used for DB writes
-clt_dlr_port 55555                          # local port used for DB reads
+clt_pub_port 5556                           # local port used for DB writes
+clt_dlr_port 5555                           # local port used for DB reads
 clt_pub_socket_timeout 500                  # send timeout on port used for DB writes
 clt_dlr_socket_timeout 500                  # send timeout on port used for DB reads
 inpoll_timeout 50                           # keep short!
@@ -16,7 +16,10 @@ alerts_send 1                               # enable ability to send global aler
 alert_send_port 12244                       # local port to use for sending global alerts
 alerts_receive 1                            # enable ability to receive global alerts
 alert_receive_port 12245                    # local port to use for receiving global alerts
-sc_port 60001                               # local port to use for slow control
+sc_port 6001                               # local port to use for slow control
 remote_port 7777                            # local port to use for remote commands
 sd_address 239.192.1.1                      # multicast address used for Service Discovery
 sd_port 5000                                # port used for Service Discovery
+multicast_send_period_ms 5000               # batch send multicast messages with this period
+mon_merge_period_ms 5000                    # only send the first monitoring message with a given device and subject once per this period
+alarm_cooldown_ms 1000                      # only send the first alarm with a given device and message once per this period

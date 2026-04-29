@@ -53,6 +53,10 @@ python: lib/libDAQInterface.so lib/libDAQInterfaceClassDict.so
 Example/Test: Example/Test.cpp lib/libDAQInterface.so
 	g++ $(CXXFLAGS) $^ -o $@ -I ./include/ -L lib/ -lDAQInterface -lpthread $(ToolDAQInclude) $(ToolDAQLib) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(BoostLib) $(ToolDAQLib)
 
+# throttle testing
+Example/Test2: Example/Test2.cpp lib/libDAQInterface.so
+	g++ $(CXXFLAGS) $^ -o $@ -I ./include/ -L lib/ -lDAQInterface -lpthread $(ToolDAQInclude) $(ToolDAQLib) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(BoostLib) $(ToolDAQLib)
+
 lib/libDAQInterfaceClassDict.so: include/DAQInterface.h include/DAQInterfaceLinkdef.h
 	rootcling -f src/DAQInterfaceClassDict.cpp -c -p -rmf lib/libDAQInterfaceClassDict.rootmap $^ -I ./include/ $(ToolFrameworkInclude) $(ToolDAQInclude) $(BoostInclude) $(ZMQInclude)
 	g++ -shared $(CXXFLAGS) -fPIC src/DAQInterfaceClassDict.cpp -o $@ -I ./ -I ./include/ $(ToolFrameworkInclude) $(ToolDAQInclude) $(BoostInclude) $(ZMQInclude) $(RootInclude) -L lib -lDAQInterface $(RootLib)
