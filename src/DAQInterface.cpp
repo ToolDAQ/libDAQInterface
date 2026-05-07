@@ -45,7 +45,7 @@ DAQInterface::~DAQInterface(){
 }
 
 void DAQInterface::SetVerbose(bool in){
-	m_verbose=in;
+	m_services->SetVerbose(in);
 	return;
 }
 

@@ -7,7 +7,7 @@ clt_dlr_port 5555                           # local port used for DB reads
 clt_pub_socket_timeout 500                  # send timeout on port used for DB writes
 clt_dlr_socket_timeout 500                  # send timeout on port used for DB reads
 inpoll_timeout 50                           # keep short!
-command_timeout 2000                        # default blocking time to wait for MM reply on DAQInterface commands before giving up
+command_timeout 1000                        # default blocking time to wait for MM reply on DAQInterface commands before giving up
 log_port 5000                               # remote port to send logging messages to
 mon_port 5000                               # remote port to send monitoring messages to
 log_address 239.192.1.2                     # multicast address to send logging messages to
@@ -16,7 +16,7 @@ alerts_send 1                               # enable ability to send global aler
 alert_send_port 12244                       # local port to use for sending global alerts
 alerts_receive 1                            # enable ability to receive global alerts
 alert_receive_port 12245                    # local port to use for receiving global alerts
-sc_port 6001                               # local port to use for slow control
+sc_port 6001                                # local port to use for slow control
 remote_port 7777                            # local port to use for remote commands
 sd_address 239.192.1.1                      # multicast address used for Service Discovery
 sd_port 5000                                # port used for Service Discovery

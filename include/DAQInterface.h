@@ -82,7 +82,6 @@ namespace ToolFramework {
     ServiceDiscovery* mp_SD;
     Store vars;
     std::string m_name;
-    bool m_verbose;
     
     
   };
