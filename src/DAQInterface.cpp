@@ -3,19 +3,18 @@
 using namespace ToolFramework;
 
 DAQInterface::DAQInterface(std::string configuration_file){
-
+  
   vars.Initialise(configuration_file);
   if(!vars.Get("device_name",m_name)) m_name = "unnamed";
   vars.Set("service_name",m_name);
   int remote_port = 0;
   std::string sd_address = "239.192.1.1";
   int sd_port = 5000;
-
-  vars.Set("remote_port", remote_port);
-  vars.Set("sd_address", sd_address);
-  vars.Set("sd_port", sd_port);
   
-
+  vars.Get("remote_port", remote_port);
+  vars.Get("sd_address", sd_address);
+  vars.Get("sd_port", sd_port);
+  
   boost::uuids::uuid m_UUID;
   std::string s_uuid;
   if(vars.Get("UUID",s_uuid)){
@@ -28,11 +27,10 @@ DAQInterface::DAQInterface(std::string configuration_file){
   mp_SD = new ServiceDiscovery(true, false, remote_port, sd_address, sd_port, m_context,m_UUID, m_name, 5, 60);
   
   m_services= new Services();
-  m_services->Init(vars, m_context, &sc_vars);
-  
+  m_services->Init(vars, m_context, &sc_vars, true);
   
 }
- 
+
 DAQInterface::~DAQInterface(){
   
   delete m_services;
@@ -83,7 +81,7 @@ bool DAQInterface::GetCalibrationData(std::string& json_data, int& version, cons
 }
 
 bool DAQInterface::GetCalibrationData(std::string& json_data, int&& version, const std::string& device, const unsigned int timeout){
-
+  
   return m_services->GetCalibrationData(json_data, version, device, timeout);
   
 }
@@ -133,19 +131,18 @@ bool DAQInterface::GetROOTplot(const std::string& plot_name, std::string& draw_o
 }
 
 bool DAQInterface::GetPlotlyPlot(const std::string& name, std::string& trace, std::string& layout, int& version, unsigned int timeout) {
-
+  
   return m_services->GetPlotlyPlot(name, trace, layout, version, timeout);
   
 }
 
 bool DAQInterface::GetPlotlyPlot(const std::string& name, std::string& trace, std::string& layout, int&& version, unsigned int timeout) {
-
+  
   return m_services->GetPlotlyPlot(name, trace, layout, version, timeout);
   
 }
 
 bool DAQInterface::SQLQuery(const std::string& query, std::vector<std::string>& responses, const unsigned int timeout){
-  
   
   return m_services->SQLQuery(query, responses, timeout);
   
@@ -153,8 +150,8 @@ bool DAQInterface::SQLQuery(const std::string& query, std::vector<std::string>& 
 
 bool DAQInterface::SQLQuery(const std::string& query, std::string& response, const unsigned int timeout){
   
-  
   return m_services->SQLQuery(query, response, timeout);
+  
 }
 
 bool DAQInterface::SQLQuery(const std::string& query, const unsigned int timeout){
@@ -186,11 +183,15 @@ bool DAQInterface::SendROOTplot(const std::string& plot_name, const std::string&
 }
 
 bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::string& trace, const std::string& layout, int* version, const uint64_t timestamp, const unsigned int lifetime, unsigned int timeout) {
+  
   return m_services->SendPlotlyPlot(name, trace, layout, version, timestamp, lifetime, timeout);
+  
 }
 
 bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::vector<std::string>& traces, const std::string& layout, int* version, const uint64_t timestamp, const unsigned int lifetime, unsigned int timeout) {
+  
   return m_services->SendPlotlyPlot(name, traces, layout, version, timestamp, lifetime, timeout);
+  
 }
 
 // ===========================================================================
@@ -200,7 +201,7 @@ bool DAQInterface::SendPlotlyPlot(const std::string& name, const std::vector<std
 SlowControlCollection* DAQInterface::GetSlowControlCollection(){
   
   return &sc_vars;
-
+  
 }
 
 SlowControlElement* DAQInterface::GetSlowControlVariable(std::string key){
@@ -222,9 +223,9 @@ bool DAQInterface::RemoveSlowControlVariable(std::string name){
 }
 
 void DAQInterface::ClearSlowControlVariables(){
-
+  
   sc_vars.Clear();
-
+  
 }
 
 bool DAQInterface::AlertSubscribe(std::string alert, std::function<bool(const char*, const char*)> function){
@@ -251,13 +252,13 @@ std::string DAQInterface::GetDeviceName(){
 }
 
 std::string DAQInterface::GetLocalConfig(){
-
+  
   return m_services->GetLocalConfig();
-
+  
 }
 
 bool DAQInterface::SetLocalConfig(std::string json){
-
+  
   return m_services->SetLocalConfig(json);
-
+  
 }
