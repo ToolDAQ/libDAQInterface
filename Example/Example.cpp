@@ -99,7 +99,7 @@ int main(){
   if(verbose) std::cout<<"Test alarm sent"<<std::endl;
   
   std::cout<<"Registering callback function 'AutomatedFunctions::new_event_func' to be invoked on alert 'new_event'..."<<std::flush;
-  DAQ_inter.AlertSubscribe("new_event",  std::bind(&AutomatedFunctions::new_event_func, automated_functions,  std::placeholders::_1)); // if the DAQ sends out a global "new_event" alert, the registered callback function will be automatically invoked
+  DAQ_inter.AlertSubscribe("new_event",  std::bind(&AutomatedFunctions::new_event_func, &automated_functions,  std::placeholders::_1)); // if the DAQ sends out a global "new_event" alert, the registered callback function will be automatically invoked
   std::cout<<"Done"<<std::endl;
   
   ///////////////////////////////////////////////////////////////////////////
@@ -119,7 +119,7 @@ int main(){
   if(verbose) std::cout<<"Done"<<std::endl;
   
   if(verbose) std::cout<<"\tRegistering 'Start' button, linked to callback AutomatedFunctions::start_func ..."<<std::flush;
-  DAQ_inter.sc_vars.Add("Start",BUTTON, std::bind(&AutomatedFunctions::start_func, automated_functions,  std::placeholders::_1));
+  DAQ_inter.sc_vars.Add("Start",BUTTON, std::bind(&AutomatedFunctions::start_func, &automated_functions,  std::placeholders::_1));
   DAQ_inter.sc_vars["Start"]->SetValue(false);
   if(verbose) std::cout<<"Done"<<std::endl;
   
@@ -141,7 +141,7 @@ int main(){
   if(verbose) std::cout<<"Done"<<std::endl;
   
   if(verbose) std::cout<<"\tRegistering 'voltage_1' variable, linked to callback AutomatedFunctions::voltage_change_func ..."<<std::flush;
-  DAQ_inter.sc_vars.Add("voltage_1", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, automated_functions,  std::placeholders::_1));  //example variable with automated function
+  DAQ_inter.sc_vars.Add("voltage_1", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, &automated_functions,  std::placeholders::_1));  //example variable with automated function
   if(verbose) std::cout<<"Done\n\tConfiguring input range, step size and initial value..."<<std::flush;
   DAQ_inter.sc_vars["voltage_1"]->SetMin(0);
   DAQ_inter.sc_vars["voltage_1"]->SetMax(5000);
@@ -161,7 +161,7 @@ int main(){
   if(verbose) std::cout<<"\tRegistering 'voltage_3' variable, linked to callback 'AutomatedFunctions::voltage_change_func' ..."<<std::flush;
   // note that we can bind the same callback function to multiple slow controls.
   // The callback function receives a key to tell you which control was changed.
-  DAQ_inter.sc_vars.Add("voltage_3", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, automated_functions,  std::placeholders::_1));
+  DAQ_inter.sc_vars.Add("voltage_3", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, &automated_functions,  std::placeholders::_1));
   if(verbose) std::cout<<"Done\n\tConfiguring input range, step size and initial value..."<<std::flush;
   DAQ_inter.sc_vars["voltage_3"]->SetMin(0);
   DAQ_inter.sc_vars["voltage_3"]->SetMax(5000);
