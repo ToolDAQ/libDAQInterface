@@ -47,6 +47,9 @@ void DAQInterface::SetVerbose(bool in){
 	return;
 }
 
+bool DAQInterface::Ready(int timeout_ms){
+	return m_services->Ready(timeout_ms);
+}
 
 // ===========================================================================
 // Write Functions

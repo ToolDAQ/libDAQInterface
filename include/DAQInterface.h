@@ -54,7 +54,7 @@ namespace ToolFramework {
     bool GetPlotlyPlot(const std::string& name, std::string& json_trace, std::string& json_layout, int&& version=-1, unsigned int timeout=default_timeout);
     std::string GetLocalConfig();
     bool SetLocalConfig(std::string json);
-
+    bool Ready(int timeout_ms);
     
     SlowControlCollection* GetSlowControlCollection();
     SlowControlElement* GetSlowControlVariable(std::string key);
