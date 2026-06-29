@@ -22,7 +22,7 @@ namespace ToolFramework {
     
   public:
     
-    DAQInterface(std::string configuration_file);
+    DAQInterface(std::string configuration_file, zmq::context_t* context=0);
     ~DAQInterface();
     
     bool SQLQuery(const std::string& database, const std::string& query, std::vector<std::string>& responses, const unsigned int timeout=300);
@@ -48,6 +48,7 @@ namespace ToolFramework {
     bool SendPlotlyPlot(const std::string& name, const std::string& json_trace, const std::string& json_layout="{}", int* version=nullptr, unsigned int timestamp=0, unsigned int timeout=300);
     bool SendPlotlyPlot(const std::string& name, const std::vector<std::string>& json_traces, const std::string& json_layout="{}", int* version=nullptr, unsigned int timestamp=0, unsigned int timeout=300);
     bool GetPlotlyPlot(const std::string& name, int& version, std::string& json_trace, std::string& json_layout, unsigned int* timestamp=nullptr, unsigned int timeout=300);
+    zmq::context_t* GetContext();
     
     SlowControlCollection* GetSlowControlCollection();
     SlowControlElement* GetSlowControlVariable(std::string key);

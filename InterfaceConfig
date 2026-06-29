@@ -16,3 +16,16 @@ command_timeout 2000			#
 log_port 55554				#
 mon_port 55553				#
 multicast_address 239.192.1.1		#
+IO_Threads 1             		# Number of threads for network traffic (~ 1/Gbps)
+alerts_send 1            		# enable ability to send global alerts
+alert_send_port 12242    		# port to send global alerts
+alerts_receive 1         		# enable ability to receive global alerts
+alert_receive_port 12243 		# port to receive global alerts
+sc_port 60000              		# port for slow control
+
+###### Service discovery ##### Ignore these settings for local analysis
+service_discovery_address 239.192.1.1 	# multicast address to use for service discovery
+service_discovery_port 5000           	# port to use for service discovery
+e to braodcast
+service_publish_sec 5                 	# heartbeat send period
+service_kick_sec 60                   	# remove hosts with no heartbeat after given period
