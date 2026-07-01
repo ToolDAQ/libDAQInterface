@@ -5,10 +5,15 @@
 #include <iostream>
 #include <zmq.hpp>
 #include <chrono>
+#include <BinaryStream.h>
+//#include <SerialisableObject.h>
 
-class DataMessages{
+using namespace ToolFramework;
+
+class DataMessages: SerialisableObject{
   
- public:
+public:
+  
   
   bool Send(zmq::socket_t* sock, int flags = 0){
     
@@ -18,6 +23,22 @@ class DataMessages{
     }
     return sock->send(messages.at(messages.size()-1), flags);
   }
+  bool Print(){return true;}
+  bool Serialise(BinaryStream &bs){
+    
+    
+    size_t tmp=messages.size();
+    bs << tmp;
+    
+    for(size_t i=0; i<tmp; i++){
+      tmp=messages.at(i).size();
+      bs<<tmp;
+      bs.Bwrite(messages.at(i).data(), messages.at(i).size());
+    }
+    
+    return true;
+  }
+  
   
   std::vector<zmq::message_t> messages;
   uint16_t sent = 0;
@@ -25,6 +46,7 @@ class DataMessages{
   std::chrono::high_resolution_clock::time_point time;
   
 };
+
 
 #endif
 

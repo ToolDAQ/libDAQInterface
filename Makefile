@@ -1,6 +1,6 @@
 Dependencies=./Dependencies
 
-CXXFLAGS=-g -fmax-errors=3 -std=c++20 -Werror=array-bounds -Werror=return-type -Wpedantic
+CXXFLAGS=-g -std=c++11 -Werror=array-bounds -Werror=return-type -Wpedantic
 
 ifeq ($(MAKECMDGOALS),debug)
 CXXFLAGS+= -O0 -lSegFault -rdynamic -DDEBUG
@@ -33,7 +33,7 @@ debug: all
 all: lib/libDAQInterface.so Win_Mac_translation Example/Example Testing/Test RemoteControl
 
 lib/libDAQInterface.so: $(sources)
-	g++ $(CXXFLAGS) -fPIC -shared src/DAQInterface.cpp -I include -o lib/libDAQInterface.so -lpthread  $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(ToolDAQInclude) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(BoostLib)
+	g++ $(CXXFLAGS) -fPIC -shared src/DAQInterface.cpp src/DataSender.cpp -I include -o lib/libDAQInterface.so -lpthread  $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(ToolDAQInclude) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(BoostLib)
 
 Win_Mac_translation: Win_Mac_translation.cpp lib/libDAQInterface.so
 	g++ $(CXXFLAGS) Win_Mac_translation.cpp -o Win_Mac_translation  -I ./include/ -L lib/ -lDAQInterface -lpthread  $(ZMQInclude) $(ZMQLib) $(ToolDAQLib) $(ToolDAQInclude) $(ToolFrameworkInclude) $(ToolFrameworkLib) $(BoostInclude) $(BoostLib) $(ToolDAQLib)  $(BoostLib)

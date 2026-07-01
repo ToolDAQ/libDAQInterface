@@ -32,9 +32,9 @@ struct DataSender_args: Thread_args{
 
   zmq::pollitem_t in_items[1];
 
-  std::atomic<uint64_t> num_data_messages = 0; ///< counter for messages received
-  std::atomic<uint64_t> num_data_akn = 0;
-  std::atomic<uint64_t> num_data_deleted = 0;
+  std::atomic<uint64_t> num_data_messages;
+  std::atomic<uint64_t> num_data_akn;
+  std::atomic<uint64_t> num_data_deleted;
  
 };
 
@@ -44,8 +44,11 @@ class DataSender{
   
   DataSender(DAQInterface* interface , Store& vars);
 
-  bool loadConfig(std::string json);
+  bool LoadConfig(std::string json);
+  bool LoadConfig(Store& vars);
+  bool Add(void* data, size_t size);
   bool Add(DataMessages* message);
+  
   std::string Summary();
   
   
@@ -53,12 +56,11 @@ class DataSender{
  private:
   
   static void Thread(Thread_args* arg);
-  bool LoadConfig(Store& vars);
 
   DAQInterface* daq_interface;
-  Utillitites m_utils;  
+  Utilities m_utils;  
   DataSender_args args;
-  buffer<DataMessages*> in_buffer;
+  Buffer<DataMessages*> in_buffer;
 
   int32_t send_high_watermark = 1;
   int32_t receive_high_watermark = 20000;
@@ -75,10 +77,15 @@ class DataSender{
  
   std::string data_port = "";
 
+  uint64_t message_num = 0;
+  
+  uint64_t num_data_messages = 0;
+  uint64_t num_data_akn = 0;
+  uint64_t num_data_deleted = 0;
   float num_data_messages_rate = 0; 
   float num_data_akn_rate = 0; 
-  float num_data_delete_rate = 0;
-  std::chrono::millisconds last;  
+  float num_data_deleted_rate = 0;
+  std::chrono::time_point<std::chrono::high_resolution_clock> last;  
   
 };
 

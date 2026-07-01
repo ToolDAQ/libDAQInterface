@@ -8,11 +8,11 @@ DataSender::DataSender(DAQInterface* interface, Store& vars){
   args.in_buffer = &in_buffer;
 
   if(!LoadConfig(vars)){
-    std::cerr<<"Data socket missing configuration values"<<std:endl;
-    args->daq_interface->SendLog("Data socket missing configuration values",LogLevel::Error);
+    std::cerr<<"Data socket missing configuration values"<<std::endl;
+    args.daq_interface->SendLog("Data socket missing configuration values",LogLevel::Error);
   }
 
-  args.sock = new zmq::socket_t sock(*(interface->context), ZMQ_DEALER);
+  args.sock = new zmq::socket_t(*(interface->context), ZMQ_DEALER);
 
   args.in_items[0].socket=*(args.sock);
   args.in_items[0].fd=0;
@@ -32,23 +32,23 @@ DataSender::DataSender(DAQInterface* interface, Store& vars){
     args.sock->setsockopt(ZMQ_TCP_KEEPALIVE_IDLE, tcp_keepalive_idle_sec);
     args.sock->setsockopt(ZMQ_TCP_KEEPALIVE_CNT, tcp_keepalive_count);
     args.sock->setsockopt(ZMQ_TCP_KEEPALIVE_INTVL, tcp_keepalive_interval_sec);
-    args.sock->setsockopt(ZMQ_IDENTITY, interface.GetDeviceName().c_str(), interface.GetDeviceName().length());
+    args.sock->setsockopt(ZMQ_IDENTITY, interface->GetDeviceName().c_str(), interface->GetDeviceName().length());
     
-    sock.bind("tcp://*:" + data_port);
+    args.sock->bind("tcp://*:" + data_port);
     
   } catch(zmq::error_t& e){
     std::cerr<<"caught "<<e.what()<<" configuring data socket"<<std::endl;
-    args->daq_interface->SendLog("error configuring data socket "+std::string{e.what()},LogLevel::Error);    
+    args.daq_interface->SendLog("error configuring data socket "+std::string{e.what()},LogLevel::Error);    
   }
 
-  last = chrono::high_resolution_clock::now();
-  m_util.CreateThread("SocketManager", &Thread, &args)  
+  last = std::chrono::high_resolution_clock::now();
+  m_utils.CreateThread("SocketManager", &Thread, &args);  
 
 }
 
-void DataSend::Thread(Thread_args* arg){
+void DataSender::Thread(Thread_args* arg){
   
-  DataSend_args* args=reinterpret_cast<DataSend_args*>(arg);
+  DataSender_args* args=reinterpret_cast<DataSender_args*>(arg);
   
   zmq::message_t msg;
   while(args->sock->recv(&msg, ZMQ_NOBLOCK)){
@@ -65,14 +65,14 @@ void DataSend::Thread(Thread_args* arg){
   ///////////////////////////////////////////////////////////////
   
   /////////////// getting new data to send ///////////////////////////
-  args->in_buffer.Swap(args->to_send);
+  args->in_buffer->Swap(args->to_send);
   ////////////////////////////////////////////////////////////////////
   
   //////////////////////// finding old data that needs resending /////////////////////
-  for(std::map<uint64_t, DataMessages*>::iterator it=sent.begin(); it!= sent.end();){
+  for(std::map<uint32_t, DataMessages*>::iterator it=args->sent.begin(); it!= args->sent.end();){
     
     args->time_span = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - it->second->time);
-    if(args->time_span > args->resend_period_ms){
+    if(args->time_span.count() > args->resend_period_ms){
       if(it->second->sent + it->second->error > args->retry_limit){
 	delete it->second;
 	it->second = 0;
@@ -86,24 +86,27 @@ void DataSend::Thread(Thread_args* arg){
       it = args->sent.erase(it);
       args->num_data_akn++;
     }
-    else{ it++;}
+    else it++;
   }
-    
+  
   
   ///////////////////////////////////////////////////////////////
-
+  
   /// if no data to send and none to receive sleep /////////////
   if(args->to_send.size()==0){
     
     try{
-      zmq::poll(&(args->in_items[0]), 1, args->poll_period);
+      zmq::poll(&(args->in_items[0]), 1, args->poll_period_ms);
     }
-    catch{
+    catch(zmq::error_t& e){
       std::cerr<<"zmq_poll data receive poll caught "<<e.what()<<std::endl;
       args->daq_interface->SendLog("zmq::poll data receive poll caught "+std::string{e.what()},LogLevel::Error);
     }
+    
     return;
   }
+  
+  
   ////////////////////////////////////////////////////////////
   
   /////////////////////////// sending data //////////////////////  
@@ -116,8 +119,8 @@ void DataSend::Thread(Thread_args* arg){
       args->to_send.at(i)->error++;
     }
     
-    args->to_send.at(i)->time=std::chrono::high_resolution::now(); 
-    args->sent[args->to_send.at(i).messages.at(0).GetMessageNum()]=args->to_send.at(i);
+    args->to_send.at(i)->time=std::chrono::high_resolution_clock::now(); 
+    args->sent[*(reinterpret_cast<uint32_t*>(args->to_send.at(i)->messages.at(0).data()))]=args->to_send.at(i);
     
   }
   
@@ -130,11 +133,25 @@ void DataSend::Thread(Thread_args* arg){
 }
 
 
+bool DataSender::Add(void* data, size_t size){
+
+  DataMessages* message = new DataMessages(); //use pool;
+  DAQHeader header;
+
+  zmq::message_t msg_header(header.size())
+    //blah
+
+    zmq::message_t data( 
+  
+			
+			return Add(message);
+}
+
 bool DataSender::Add(DataMessages* message){
 
   in_buffer.Add(message);
-  args->num_data_messages++;
-
+  args.num_data_messages++;
+  return true;
 }
 
 std::string DataSender::Summary(){
@@ -144,20 +161,20 @@ std::string DataSender::Summary(){
   
   std::chrono::milliseconds time_span = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - last);
   
-  num_data_messages_rate = ((args->num_data_messages - num_data_messages)*1000)/ time_span; 
-  num_data_akn_rate = ((args->num_data_akn - num_data_akn)*1000)/ time_span;  
-  num_data_deleted_rate = ((args->num_data_deleted - num_data_deleted)*1000)/ time_span; 
+  num_data_messages_rate = ((args.num_data_messages - num_data_messages)*1000)/ (float)time_span.count(); 
+  num_data_akn_rate = ((args.num_data_akn - num_data_akn)*1000)/ (float)time_span.count();  
+  num_data_deleted_rate = ((args.num_data_deleted - num_data_deleted)*1000)/ (float)time_span.count(); 
 
-  num_data_messages = args->num_data_messages;
-  num_data_akn = args->num_data_akn;
-  num_data_deleted = args->num_data_deleted;
+  num_data_messages = args.num_data_messages;
+  num_data_akn = args.num_data_akn;
+  num_data_deleted = args.num_data_deleted;
 
 
   last = std::chrono::high_resolution_clock::now();
   
   tmp.Set("num_data_messages_rate", num_data_messages_rate);
-  tmp.Set("num_data_akn_rate", num_data_akn_reate);
-  tmp.Set("num_data_deleted_rate", num_data_deleted_reate);
+  tmp.Set("num_data_akn_rate", num_data_akn_rate);
+  tmp.Set("num_data_deleted_rate", num_data_deleted_rate);
 
   tmp.Set("num_data_messages", num_data_messages);
   tmp.Set("num_data_akn", num_data_akn);
@@ -168,13 +185,20 @@ std::string DataSender::Summary(){
 
   tmp>>out;
 
-  retrun out;
+  return out;
 
 }
 
 
 
-bool load(Store& vars){
+bool DataSender::LoadConfig(std::string json){
+
+  Store tmp;
+  tmp.JsonParser(json);
+  return LoadConfig(tmp);
+}
+
+  bool DataSender::LoadConfig(Store& vars){
 
   bool ret = true;
   ret = vars.Get("ZMQ_RCVHWM", receive_high_watermark) && ret;
@@ -191,9 +215,13 @@ bool load(Store& vars){
   ret = vars.Get("ZMQ_TCP_KEEPALIVE_INTVL", tcp_keepalive_interval_sec) && ret;
   ret = vars.Get("data_port", data_port) && ret;  
   
-  ret = vars.Get("retry_limit", args->retry_limit) && ret;  
-  ret = vars.Get("resend_period_ms", args->resend_period_ms) && ret;  
-  ret = vars.Get("poll_period_ms", args->poll_period_ms) && ret;  
+  ret = vars.Get("retry_limit", args.retry_limit) && ret;  
+  ret = vars.Get("resend_period_ms", args.resend_period_ms) && ret;  
+  ret = vars.Get("poll_period_ms", args.poll_period_ms) && ret;
+
+  args.num_data_messages = 0;
+  args.num_data_akn = 0;
+  args.num_data_deleted = 0;
 
   return ret;
 
