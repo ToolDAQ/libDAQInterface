@@ -1,11 +1,14 @@
 #include <DataSender.h>
 
+void NullFree(void*data, void* hint){;}
 
-DataSender::DataSender(DAQInterface* interface, Store& vars){
+DataSender::DataSender(DAQInterface* interface, Store& vars, uint8_t in_card_type, uint16_t in_card_id){
   
   args.daq_interface = interface;
-  
   args.in_buffer = &in_buffer;
+
+  card_type = in_card_type;
+  card_id = in_card_id;
 
   if(!LoadConfig(vars)){
     std::cerr<<"Data socket missing configuration values"<<std::endl;
@@ -74,12 +77,15 @@ void DataSender::Thread(Thread_args* arg){
     args->time_span = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - it->second->time);
     if(args->time_span.count() > args->resend_period_ms){
       if(it->second->sent + it->second->error > args->retry_limit){
-	delete it->second;
-	it->second = 0;
-	it = args->sent.erase(it);
-	args->daq_interface->SendLog("Electronics Data being throw away as max retries reached",LogLevel::Warning);
-	args->num_data_deleted++;
+	if(it->second->in_use==0){
+	  delete it->second;
+	  it->second = 0;
+	  it = args->sent.erase(it);
+	  args->daq_interface->SendLog("Electronics Data being throw away as max retries reached",LogLevel::Warning);
+	  args->num_data_deleted++;
+	}
 	continue;
+	
       }
       args->to_send.push_back(it->second);
       it->second = 0;
@@ -133,18 +139,17 @@ void DataSender::Thread(Thread_args* arg){
 }
 
 
-bool DataSender::Add(void* data, size_t size){
+bool DataSender::Add(void* data, size_t size, uint32_t coarse_counter){
 
   DataMessages* message = new DataMessages(); //use pool;
-  DAQHeader header;
-
-  zmq::message_t msg_header(header.size())
-    //blah
-
-    zmq::message_t data( 
-  
-			
-			return Add(message);
+  DAQHeader* header = new DAQHeader(coarse_counter, message_num++);
+  header->SetCardID(card_id);
+  header->SetType(card_type);
+  header->SetNumWords(size/4);
+  //zmq::message_t bob(header, header->Size(), NullFree, nullptr);
+  message->messages.emplace_back(header, header->Size(), NullFree, nullptr);
+  message->messages.emplace_back(data, size, Decrement, message);
+  return Add(message);
 }
 
 bool DataSender::Add(DataMessages* message){
@@ -196,6 +201,7 @@ bool DataSender::LoadConfig(std::string json){
   Store tmp;
   tmp.JsonParser(json);
   return LoadConfig(tmp);
+
 }
 
   bool DataSender::LoadConfig(Store& vars){

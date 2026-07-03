@@ -10,6 +10,7 @@
 #include <chrono>
 #include <atomic>
 #include <Buffer.h>
+#include <RAWDAQHeader.h>
 
 using namespace ToolFramework;
 
@@ -42,11 +43,11 @@ class DataSender{
   
  public:
   
-  DataSender(DAQInterface* interface , Store& vars);
+  DataSender(DAQInterface* interface , Store& vars, uint8_t in_card_type, uint16_t in_card_id);
 
   bool LoadConfig(std::string json);
   bool LoadConfig(Store& vars);
-  bool Add(void* data, size_t size);
+  bool Add(void* data, size_t size, uint32_t coarse_counter);
   bool Add(DataMessages* message);
   
   std::string Summary();
@@ -85,7 +86,10 @@ class DataSender{
   float num_data_messages_rate = 0; 
   float num_data_akn_rate = 0; 
   float num_data_deleted_rate = 0;
-  std::chrono::time_point<std::chrono::high_resolution_clock> last;  
+  std::chrono::time_point<std::chrono::high_resolution_clock> last;
+
+  uint8_t card_type = 0;
+  uint16_t card_id = 0;
   
 };
 
