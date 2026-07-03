@@ -26,7 +26,7 @@ namespace ToolFramework {
     
   public:
     
-    DAQInterface(std::string configuration_file);
+    DAQInterface(std::string configuration_file, zmq::context_t* context=0);
     ~DAQInterface();
     
     bool SQLQuery(const std::string& query, std::vector<std::string>& responses, const unsigned int timeout=default_timeout);
@@ -55,6 +55,8 @@ namespace ToolFramework {
     std::string GetLocalConfig();
     bool SetLocalConfig(std::string json);
     bool Ready(int timeout_ms);
+    zmq::context_t* GetContext();
+
     
     SlowControlCollection* GetSlowControlCollection();
     SlowControlElement* GetSlowControlVariable(std::string key);
