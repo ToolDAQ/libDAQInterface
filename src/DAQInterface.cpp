@@ -10,11 +10,9 @@ DAQInterface::DAQInterface(std::string configuration_file, zmq::context_t* conte
   
   if(!vars.Get("device_name",m_name)) m_name = "unnamed";
   vars.Set("service_name",m_name);
-  int remote_port = 0;
   std::string sd_address = "239.192.1.1";
   int sd_port = 5000;
   
-  vars.Get("remote_port", remote_port);
   vars.Get("sd_address", sd_address);
   vars.Get("sd_port", sd_port);
   

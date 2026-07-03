@@ -1,5 +1,9 @@
 #include <DataSender.h>
 
+DataSender_args::DataSender_args():Thread_args(){}
+
+DataSender_args::~DataSender_args(){}
+
 void NullFree(void*data, void* hint){;}
 
 DataSender::DataSender(DAQInterface* interface, Store& vars, uint8_t in_card_type, uint16_t in_card_id){
@@ -15,7 +19,7 @@ DataSender::DataSender(DAQInterface* interface, Store& vars, uint8_t in_card_typ
     args.daq_interface->SendLog("Data socket missing configuration values",LogLevel::Error);
   }
 
-  args.sock = new zmq::socket_t(*(interface->context), ZMQ_DEALER);
+  args.sock = new zmq::socket_t(*(interface->GetContext()), ZMQ_DEALER);
 
   args.in_items[0].socket=*(args.sock);
   args.in_items[0].fd=0;
