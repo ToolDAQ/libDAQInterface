@@ -23,14 +23,15 @@ class AutomatedFunctions:
     self.DAQ_inter = iDAQ_inter
     self.name = iname
   
-  def new_event_func(self, event_name: str, event_payload: str) -> None:
+  def new_event_func(self, event_name: str, event_payload: str) -> bool:
     print("new_event_func fired for event ",event_name)
     self.DAQ_inter.SendLog(self.name+" received an alert for event "+event_name)
     # add your desired actions on new_event here
     # if this function is subscribed to multiple alerts, you can use event_name
     # to determine the appropriate actions to take
     # return type for AlertSubscribe functions is void (no return value)
-  
+    return true
+
   def start_func(self, control_name: str) -> str:
     self.DAQ_inter.SendLog(self.name," received start signal")
     # add code to perform any startup actions here
@@ -243,12 +244,12 @@ if __name__ == "__main__":
   print("testing generic sql queries")
   # single-record query
   resp = std.string()
-  qryok = DAQ_inter.SQLQuery("daq","SELECT config_id, name, version, data FROM configurations",resp)
+  qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 1",resp)
   print("single-record query success: ",qryok,", response: '",resp,"'")
   
   # for multi-record queries
   resps = std.vector['std::string']()
-  qryok = DAQ_inter.SQLQuery("daq","SELECT device, version, data FROM device_config",resps)
+  qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 5",resps)
   print("multi-record query success: ",qryok,", responses:")
   for i in range(min(5,resps.size())):
      print(i,": '",resps[i],"'")
@@ -336,7 +337,7 @@ if __name__ == "__main__":
       monitoring_data.__rshift__['std::string'](monitoring_json)
       
       # send to the Database for plotting on the webpage
-      DAQ_inter.SendMonitoringData("general", monitoring_json)
+      DAQ_inter.SendMonitoringData(monitoring_json, "general")
       
       # retrieve and respond to control changes
       ###########################################

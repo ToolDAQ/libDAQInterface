@@ -17,13 +17,13 @@ class AutomatedFunctions {
   
   DAQInterface* DAQ_inter;
   
-  void new_event_func(const char* alert){
+  bool new_event_func(const char* alert){
     
     DAQ_inter->SendLog("Hello i received a new_event alert");
     std::cout<<"recevied a 'new_event' alert"<<std::endl;
     
     //do new event alert action, e.g. reload configuration from DB
-    
+    return true;
   }
   
   
@@ -89,9 +89,9 @@ int main(){
   ///////////////////////////////// logging alarms and alerts ///////////////////////////////
   
   std::cout<<"Testing logging..."<<std::flush;
-  DAQ_inter.SendLog("severity 2 message", 2, device_name);   //sending log message to database specifing severity and device name
-  DAQ_inter.SendLog("important message", 0, device_name);
-  DAQ_inter.SendLog("unimportant message");   // if not specified, the default severity level is 9 and the default name is the one passed to the DAQInterface constructor
+  DAQ_inter.SendLog("error message", LogLevel::Error, device_name);   //sending log message to database specifing severity and device name
+  DAQ_inter.SendLog("warning message", LogLevel::Warning, device_name); // LogLevels include: Error, Warning, Message, Debug, Debug1, Debug2, Debug3
+  DAQ_inter.SendLog("normal logging message");   // if not specified, the default severity level is 'Messge' and the default name is the one passed to the DAQInterface constructor
   if(verbose) std::cout<<"Logs sent"<<std::endl;
   
   std::cout<<"Sending test alarm..."<<std::flush;
@@ -99,7 +99,7 @@ int main(){
   if(verbose) std::cout<<"Test alarm sent"<<std::endl;
   
   std::cout<<"Registering callback function 'AutomatedFunctions::new_event_func' to be invoked on alert 'new_event'..."<<std::flush;
-  DAQ_inter.AlertSubscribe("new_event",  std::bind(&AutomatedFunctions::new_event_func, automated_functions,  std::placeholders::_1)); // if the DAQ sends out a global "new_event" alert, the registered callback function will be automatically invoked
+  DAQ_inter.AlertSubscribe("new_event",  std::bind(&AutomatedFunctions::new_event_func, &automated_functions,  std::placeholders::_1)); // if the DAQ sends out a global "new_event" alert, the registered callback function will be automatically invoked
   std::cout<<"Done"<<std::endl;
   
   ///////////////////////////////////////////////////////////////////////////
@@ -119,7 +119,7 @@ int main(){
   if(verbose) std::cout<<"Done"<<std::endl;
   
   if(verbose) std::cout<<"\tRegistering 'Start' button, linked to callback AutomatedFunctions::start_func ..."<<std::flush;
-  DAQ_inter.sc_vars.Add("Start",BUTTON, std::bind(&AutomatedFunctions::start_func, automated_functions,  std::placeholders::_1));
+  DAQ_inter.sc_vars.Add("Start",BUTTON, std::bind(&AutomatedFunctions::start_func, &automated_functions,  std::placeholders::_1));
   DAQ_inter.sc_vars["Start"]->SetValue(false);
   if(verbose) std::cout<<"Done"<<std::endl;
   
@@ -141,7 +141,7 @@ int main(){
   if(verbose) std::cout<<"Done"<<std::endl;
   
   if(verbose) std::cout<<"\tRegistering 'voltage_1' variable, linked to callback AutomatedFunctions::voltage_change_func ..."<<std::flush;
-  DAQ_inter.sc_vars.Add("voltage_1", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, automated_functions,  std::placeholders::_1));  //example variable with automated function
+  DAQ_inter.sc_vars.Add("voltage_1", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, &automated_functions,  std::placeholders::_1));  //example variable with automated function
   if(verbose) std::cout<<"Done\n\tConfiguring input range, step size and initial value..."<<std::flush;
   DAQ_inter.sc_vars["voltage_1"]->SetMin(0);
   DAQ_inter.sc_vars["voltage_1"]->SetMax(5000);
@@ -161,7 +161,7 @@ int main(){
   if(verbose) std::cout<<"\tRegistering 'voltage_3' variable, linked to callback 'AutomatedFunctions::voltage_change_func' ..."<<std::flush;
   // note that we can bind the same callback function to multiple slow controls.
   // The callback function receives a key to tell you which control was changed.
-  DAQ_inter.sc_vars.Add("voltage_3", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, automated_functions,  std::placeholders::_1));
+  DAQ_inter.sc_vars.Add("voltage_3", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, &automated_functions,  std::placeholders::_1));
   if(verbose) std::cout<<"Done\n\tConfiguring input range, step size and initial value..."<<std::flush;
   DAQ_inter.sc_vars["voltage_3"]->SetMin(0);
   DAQ_inter.sc_vars["voltage_3"]->SetMax(5000);
@@ -243,7 +243,7 @@ int main(){
     DAQ_inter.sc_vars["voltage_2"]->SetValue(voltage_2);
     
     // or we may take alternative action such as logging an error
-    if(!configuration.Get("voltage_3", voltage_3)) DAQ_inter.SendLog("voltage3 not set", 0, device_name); //sends log message if not in configuration
+    if(!configuration.Get("voltage_3", voltage_3)) DAQ_inter.SendLog("voltage3 not set", LogLevel::Error, device_name); //sends log message if not in configuration
     else DAQ_inter.sc_vars["voltage_3"]->SetValue(voltage_3);
     
   }
@@ -265,19 +265,13 @@ int main(){
   // Each submitted plot with the same name is stored in the database as a different version. 
   /////////////////////////////////////////////////////////////////
   std::vector<float> plot_x(5);
-  for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
   std::vector<float> plot_y(plot_x.size());
-  for (auto& y : plot_y) y = rand();
+  for (size_t i = 0; i < plot_x.size(); ++i) plot_x[i] = i;
   
-  std::string plot_layout = "{"
-    "\"title\":\"A random plot\","
-    "\"xaxis\":{\"title\":\"x\"},"
-    "\"yaxis\":{\"title\":\"y\"}"
-  "}";
-  
+  Store store; // for conversion to JSON
   std::vector<std::string> traces(2);
   
-  Store store;
+  for (auto& y : plot_y) y = rand();
   store.Set("x", plot_x);
   store.Set("y", plot_y);
   store >> traces[0];
@@ -287,6 +281,12 @@ int main(){
   store.Set("y", plot_y);
   store >> traces[1];
   
+  std::string plot_layout = "{"
+    "\"title\":\"A random plot\","
+    "\"xaxis\":{\"title\":\"x\"},"
+    "\"yaxis\":{\"title\":\"y\"}"
+  "}";
+  
   DAQ_inter.SendPlotlyPlot("test_plot", traces, plot_layout);
   
   /////////////////////////// generic SQL query example //////////////////////
@@ -294,12 +294,12 @@ int main(){
   std::string resp;
   std::cout<<"Testing submitting generic SQL queries"<<std::endl;
   // single-record query
-  bool qryok = DAQ_inter.SQLQuery("daq","SELECT config_id, name, version, data FROM configurations",resp);
+  bool qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 1",resp);
   std::cout<<"single-record query success: "<<qryok<<", response: '"<<resp<<"'"<<std::endl;
   
   // for multi-record queries
   std::vector<std::string> resps;
-  qryok = DAQ_inter.SQLQuery("daq","SELECT version, data FROM device_config WHERE device='"+device_name+"'",resps);
+  qryok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 5",resps);
   std::cout<<"multi-record query success: "<<qryok<<", got "<<resps.size()<<" records:"<<std::endl;
   for(int i=0; i<std::min(resps.size(),size_t(5)); ++i) std::cout<<i<<": '"<<resps.at(i)<<"'"<<std::endl;
   if(resps.size()>5) std::cout<<"...\n"<<std::endl;
@@ -373,7 +373,7 @@ int main(){
       monitoring_data>>monitoring_json; /// prducing monitoring json 
       
       // send to the database
-      bool ok = DAQ_inter.SendMonitoringData("general", monitoring_json);
+      bool ok = DAQ_inter.SendMonitoringData(monitoring_json, "general");
       if(!ok){
       	std::cerr<<"sendmonitoringdata failed"<<std::endl;
       }

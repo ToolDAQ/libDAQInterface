@@ -69,7 +69,7 @@ if [ ${REDHATLIKE} -eq 0 ]; then
 	# trigger yum to update its metadata
 	echo "updating yum metadata..."
 	yum list installed >/dev/null 2>&1
-	DEPS=(wget git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel)
+	DEPS=(wget git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel patch)
 	# centos7 requires cmake3 from epel
 	RHVER=$(grep "VERSION_ID" /etc/os-release | cut -d\" -f2)
 	RHOLD=$(echo -e "8\n${RHVER}" | sort -V -C; echo $?)
@@ -118,7 +118,7 @@ else
 				exit 1;
 			else
 				echo "Attempting installation assuming dependencies are installed";
-				NEEDDEPS=""
+				unset NEEDDEPS
 				break;
 			fi
 		else
@@ -148,11 +148,11 @@ if [ $(which g++ &> /dev/null; echo $?) -eq 0 ]; then
 	fi
 fi
 
-if [ -z "${NEEDDEPS}" ]; then
+if [ -z "${NEEDDEPS[*]}" ]; then
 	echo "All system dependencies satisfied, continuing"
 else
 	echo "The following system dependencies were not found on your system"
-	echo "${NEEDDEPS}"
+	echo "${NEEDDEPS[*]}"
 	# if we're run as root, offer to install them
 	if [ "$(whoami)" == "root" ]; then
 		echo "Install these packages?"
@@ -236,8 +236,8 @@ rm -f root_v${ROOTVER}.source.tar.gz
 mkdir root_v${ROOTVER}   # install dir
 mkdir rootbuild          # build dir (temporary)
 cd rootbuild
-cmake3 ../root-${ROOTVER} -Dpyroot=ON -Dasimage=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_INSTALL_PREFIX=${INSTALLDIR}/root_v${ROOTVER} #-DCMAKE_CXX_STANDARD=14
-#-Dgminimal=ON
+#cmake3 ../root-${ROOTVER} -Dpyroot=ON -Dasimage=ON -Dgdml=ON -Dxml=ON -Dmt=ON -Dmathmore=ON -Dx11=ON -Dimt=ON -Dtmva=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo -Dpythia6=ON -Dfftw3=ON -DCMAKE_INSTALL_PREFIX=${INSTALLDIR}/root_v${ROOTVER} #-DCMAKE_CXX_STANDARD=14
+cmake3 ../root-${ROOTVER} -Dgminimal=ON -Dpyroot=ON -Dxrootd=OFF -Dbuiltin_xrootd=OFF -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX=${INSTALLDIR}/root_v${ROOTVER} -DCMAKE_CXX_STANDARD=20
 make -j$(nproc)
 make install
 cd ../

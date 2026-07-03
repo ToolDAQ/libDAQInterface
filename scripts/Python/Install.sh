@@ -1,6 +1,6 @@
 #!/bin/bash
-set -x
-#set -e
+#set -x
+#set -e   # we can't set this as some commands may be expected to fail
 
 # a function to check for presence of cppyy. New ROOT versions come with it.
 # XXX for some reason this doesn't like the use of tab for whitespace!!! XXX
@@ -23,7 +23,11 @@ for m in v: print(m, end=' ')
     RESULT="$(echo -n ${RESULT} | xargs echo -n)"
     echo $RESULT | sed 's/ /·/g;s/\t/￫/g;s/\r/§/g;s/$/¶/g'  # check whitespace
     if [ "$RESULT" != "0 1 2 3 4 5 6 7 8 9" ]; then
-        echo "Test Failed! Check your installation of python3 and cppyy!"
+        if [ "$1" != "q" ]; then
+            echo "Test Failed! Check your installation of python3 and cppyy!"
+        else
+            echo "cppyy not found"
+        fi
         return 1
     else
         echo "Test Passed"
@@ -32,7 +36,7 @@ for m in v: print(m, end=' ')
 }
 
 echo "checking for pre-existing presence of cppyy"
-checkcppyy
+checkcppyy "q"
 if [ $? -eq 0 ]; then
 	# if we already have it, we have nothing to do....
 	# TODO the PythonScript c++ interface may require at least python3-devel as well...?
@@ -43,7 +47,7 @@ fi
 CURDIR=${PWD}  # in case we need to return to it. unused.
 cd "$( dirname "${BASH_SOURCE[0]}" )"
 
-# first argument is installation destination
+# first argument if given is installation destination:
 INSTALLDIR="/opt"
 if [ $# -gt 0 ]; then
 	INSTALLDIR="$1"
@@ -58,14 +62,14 @@ fi
 # first determine what kind of OS we're on.
 REDHATLIKE=$(yum --version >/dev/null 2>&1; echo $?)
 DEBIANLIKE=$(dpkg --version >/dev/null 2>&1; echo $?)
-NEEDDEPS=""
+unset NEEDDEPS
 if [ ${REDHATLIKE} -eq 0 ]; then
 	echo "red-hat based OS"
 	# red-hat based OS.
 	# trigger yum to update its metadata
 	echo "updating yum metadata..."
 	yum list installed >/dev/null 2>&1
-	DEPS=(gcc-c++ gcc make cmake git python3 python3-libs python3-devel python3-pip patch which)
+	DEPS=(wget git make gcc-c++ gcc binutils libX11-devel libXpm-devel libXft-devel libXext-devel python3 python3-devel openssl-devel fftw-devel libuuid-devel)
 	for DEP in "${DEPS[@]}"; do
 		echo "looking for ${DEP}..."
 		# this is probably not a great check as 'grep' could match on anything
@@ -75,7 +79,7 @@ if [ ${REDHATLIKE} -eq 0 ]; then
 		GOTDEP=$(yum list installed 2>/dev/null | grep "${DEP}" >/dev/null 2>&1; echo $?)
 		if [ ${GOTDEP} -ne 0 ]; then
 			echo "not found"
-			NEEDDEPS="${NEEDDEPS} ${DEP}"
+			NEEDDEPS=( ${NEEDDEPS} ${DEP} )
 		fi
 	done
 elif [ ${DEBIANLIKE} -eq 0 ]; then
@@ -87,7 +91,7 @@ elif [ ${DEBIANLIKE} -eq 0 ]; then
 		GOTDEP=$(dpkg --list | grep "${DEP}" >/dev/null 2>&1; echo $?)
 		if [ ${GOTDEP} -ne 0 ]; then
 			echo "not found"
-			NEEDDEPS="${NEEDDEPS} ${DEP}"
+			NEEDDEPS=( ${NEEDDEPS} ${DEP} )
 		fi
 	done
 else
@@ -104,7 +108,7 @@ else
 				exit 1;
 			else
 				echo "Attempting installation assuming dependencies are installed";
-				NEEDDEPS=""
+				unset NEEDDEPS
 				break;
 			fi
 		else
@@ -146,7 +150,7 @@ else
 								exit 1;
 							else
 								echo "Attempting installation assuming dependencies are installed"
-								NEEDDEPS=""
+								unset NEEDDEPS
 								break;
 							fi
 						else
@@ -157,7 +161,9 @@ else
 				else
 					echo "Installing dependencies..."
 					if [ ${REDHATLIKE} -eq 0 ]; then
-						yum install -y ${NEEDDEPS}
+						for DEP in "${NEEDDEPS[@]}"; do echo "${DEP}";
+							yum install -y ${DEP}
+						done
 						INSTALLOK=$?
 					elif [ ${DEBIANLIKE} -eq 0 ]; then
 						apt-get install -y ${NEEDDEPS}
