@@ -2,9 +2,12 @@
 
 using namespace ToolFramework;
 
-DAQInterface::DAQInterface(std::string configuration_file){
+DAQInterface::DAQInterface(std::string configuration_file, zmq::context_t* context){
+
+  if(!vars.Initialise(configuration_file)){
+    std::clog<<"Error invalid configuration file given to DAQ Interface: "<<configuration_file<<std::endl;
+  }
   
-  vars.Initialise(configuration_file);
   if(!vars.Get("device_name",m_name)) m_name = "unnamed";
   vars.Set("service_name",m_name);
   int remote_port = 0;
@@ -22,13 +25,47 @@ DAQInterface::DAQInterface(std::string configuration_file){
   } else {
     m_UUID = boost::uuids::random_generator()();
   }
+
+  int pubsec = 5;
+  int kicksec = 60;
+
+  vars.Get("service_publish_sec", pubsec);
+  vars.Get("service_kick_sec", kicksec);
+
+  bool send = (pubsec>=0);
+  bool receive = (kicksec>=0);
+  int remote_port = 60000;
+
+  vars.Get("sc_port", remote_port);
   
-  m_context = new zmq::context_t(1);
-  mp_SD = new ServiceDiscovery(true, false, remote_port, sd_address, sd_port, m_context,m_UUID, m_name, 5, 60);
+  std::vector<std::string> mc_addresses;  
+  std::vector<int> mc_ports;
+
+  if(!vars.Get("service_discovery_address",mc_addresses)){
+    std::string tmp_address="";
+    if(vars.Get("service_discovery_address",tmp_address)) mc_addresses.emplace_back(tmp_address);
+    else  mc_addresses.emplace_back("239.192.1.1");
+  }
+  if(!vars.Get("service_discovery_port",mc_ports)){
+    int tmp_port=0;
+    if(vars.Get("service_discovery_port",tmp_port)) mc_ports.emplace_back(tmp_port);
+    else mc_ports.emplace_back(5000);
+  }                  
+
+  if(context==0){
+    int iothreads = 1;
+    vars.Get("IO_Threads",iothreads);
+    
+    m_context = new zmq::context_t(iothreads);
+  }
+  else m_context = context;
+  
+  mp_SD = new ServiceDiscovery(send, receive, remote_port, mc_addresses, mc_ports , m_context,m_UUID, m_name, pubsec, kicksec);
+
   
   m_services= new Services();
   m_services->Init(vars, m_context, &sc_vars, true);
-  
+
 }
 
 DAQInterface::~DAQInterface(){
@@ -47,6 +84,9 @@ void DAQInterface::SetVerbose(bool in){
 	return;
 }
 
+bool DAQInterface::Ready(int timeout_ms){
+	return m_services->Ready(timeout_ms);
+}
 
 // ===========================================================================
 // Write Functions
@@ -135,6 +175,8 @@ bool DAQInterface::GetPlotlyPlot(const std::string& name, std::string& trace, st
   return m_services->GetPlotlyPlot(name, trace, layout, version, timeout);
   
 }
+
+zmq::context_t* DAQInterface::GetContext(){ return m_context;}
 
 bool DAQInterface::GetPlotlyPlot(const std::string& name, std::string& trace, std::string& layout, int&& version, unsigned int timeout) {
   
