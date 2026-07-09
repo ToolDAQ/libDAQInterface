@@ -10,9 +10,11 @@
 #include <chrono>
 #include <atomic>
 #include <Buffer.h>
-#include <RAWDAQHeader.h>
+#include <DAQHeader.h>
 
 using namespace ToolFramework;
+
+void DeleteHeader(void* data);
 
 struct DataSender_args: Thread_args{
   
@@ -21,13 +23,16 @@ struct DataSender_args: Thread_args{
   
   DAQInterface* daq_interface;
   Buffer<DataMessages*>* in_buffer;
-  std::vector<DataMessages*> to_send; 
+  std::vector<DataMessages*> new_send; 
+  std::deque<DataMessages*> to_send; 
   std::map<uint32_t, DataMessages*> sent;
   std::chrono::milliseconds time_span;
+  std::map<uint32_t, DataMessages*>::iterator message_it;
  
   uint16_t retry_limit = 200;
   uint32_t resend_period_ms = 50;  
   uint32_t poll_period_ms = 100;
+  uint16_t send_error_counter = 0;
 
   zmq::socket_t* sock;
 
@@ -47,7 +52,7 @@ class DataSender{
 
   bool LoadConfig(std::string json);
   bool LoadConfig(Store& vars);
-  bool Add(void* data, size_t size, uint32_t coarse_counter);
+  bool Add(void* data, size_t size, uint32_t coarse_counter, void(*del_func)(void*));
   bool Add(DataMessages* message);
   
   std::string Summary();
@@ -86,7 +91,7 @@ class DataSender{
   float num_data_messages_rate = 0; 
   float num_data_akn_rate = 0; 
   float num_data_deleted_rate = 0;
-  std::chrono::time_point<std::chrono::high_resolution_clock> last;
+  std::chrono::time_point<std::chrono::steady_clock> last;
 
   uint8_t card_type = 0;
   uint16_t card_id = 0;

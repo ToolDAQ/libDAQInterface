@@ -10,6 +10,7 @@
 
 using namespace ToolFramework;
 
+void NullFree(void*data, void* hint);
 void Decrement(void* data, void* hint);
 
 class DataMessages: SerialisableObject{
@@ -17,6 +18,7 @@ class DataMessages: SerialisableObject{
 public:
   
   DataMessages();
+  ~DataMessages();
   
   bool Send(zmq::socket_t* sock, int flags = 0);  
   bool Print();
@@ -24,9 +26,10 @@ public:
   
   
   std::vector<zmq::message_t> messages;
+  std::vector<void (*)(void*)> delete_functions;
   uint16_t sent = 0;
   uint16_t error = 0;
-  std::chrono::high_resolution_clock::time_point time;
+  std::chrono::steady_clock::time_point time;
   std::atomic<uint16_t> in_use;
   void* data = 0;
   size_t size = 0;

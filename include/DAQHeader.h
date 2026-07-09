@@ -1,34 +1,10 @@
-#ifndef RAW_DAQ_HEADER_H
-#define RAW_DAQ_HEADER_H
+#ifndef DAQ_HEADER_H
+#define DAQ_HEADER_H
 
 #include <stddef.h>
-#include <cstdint>
-#include <stdlib.h>     /* srand, rand */
-#include <time.h>       /* time */
-#include <limits.h>
 #include <bitset>
 #include <iostream>
 
-class RAWDAQHeader{
-
- public:
-
-  RAWDAQHeader();
-  RAWDAQHeader(uint32_t* in_data);
-  uint32_t GetMessageNum() const;
-  uint32_t GetCoarseCounter() const;
-  uint8_t GetType() const;
-  uint16_t GetCardID() const;
-  uint16_t GetNumWords() const;
-  uint8_t GetFlags() const;
-  void Print() const;
-
- private:
-
-  uint32_t* data;
-
-
-};
 
 class DAQHeader{
 

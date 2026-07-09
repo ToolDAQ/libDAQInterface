@@ -1,4 +1,4 @@
-#include <RAWDAQHeader.h>
+#include <DAQHeader.h>
 
 namespace {
   constexpr uint32_t TYPE_MASK      = 0b11000000000000000000000000000000;
@@ -7,36 +7,13 @@ namespace {
   constexpr uint32_t FLAGS_MASK     = 0b00000000000000000000000000000111;
 }
 
-RAWDAQHeader::RAWDAQHeader(){;}
-
-RAWDAQHeader::RAWDAQHeader(uint32_t* in_data){ data=in_data;}
-
-uint32_t RAWDAQHeader::GetMessageNum() const { return data[0]; }
-uint32_t RAWDAQHeader::GetCoarseCounter()const { return data[1]; }
-uint8_t RAWDAQHeader::GetType() const { return data[2] >> 30;}
-uint16_t RAWDAQHeader::GetCardID() const { return ((data[2] & CAR_ID_MASK) >> 18);}
-uint16_t RAWDAQHeader::GetNumWords() const { return ((data[2] & WORDS_MASK) >> 3);}
-uint8_t RAWDAQHeader::GetFlags() const{ return data[2] & FLAGS_MASK; }
-void RAWDAQHeader::Print() const{
-
-  std::cout<<std::bitset<32>(data[0])<<" , "<<std::bitset<32>(data[1])<<" , "<<std::bitset<32>(data[2])<<std::endl;
-  std::cout<<"MessageNum: "<<GetMessageNum()<<" , "<<std::bitset<32>(GetMessageNum())<<std::endl;
-  std::cout<<"CoarseCounter: "<<GetCoarseCounter()<<" , "<<std::bitset<32>(GetCoarseCounter())<<std::endl;
-  std::cout<<"Type: "<<+GetType()<<" , "<<std::bitset<2>(GetType())<<std::endl;
-  std::cout<<"CardID: "<<GetCardID()<<" , "<<std::bitset<12>(GetCardID())<<std::endl;
-  std::cout<<"NumWords: "<<GetNumWords()<<" , "<<std::bitset<15>(GetNumWords())<<std::endl;
-  std::cout<<"Flags: "<<+GetFlags()<<" , "<<std::bitset<3>(GetFlags())<<std::endl;
-
-}
-
-
 DAQHeader::DAQHeader(){;}
 
 DAQHeader::DAQHeader(uint32_t coarse_counter, uint32_t msg_num){ 
 
   SetMessageNum(msg_num);  
-  data[1] = rand() % UINT_MAX;
-  data[2] = rand() % UINT_MAX;
+  data[1] = 0;
+  data[2] = 0;
   SetCoarseCounter(coarse_counter);
 
 }

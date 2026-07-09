@@ -10,60 +10,87 @@ DAQInterface::DAQInterface(std::string configuration_file, zmq::context_t* conte
   
   if(!vars.Get("device_name",m_name)) m_name = "unnamed";
   vars.Set("service_name",m_name);
-  std::string sd_address = "239.192.1.1";
-  int sd_port = 5000;
-  
-  vars.Get("sd_address", sd_address);
-  vars.Get("sd_port", sd_port);
-  
-  boost::uuids::uuid m_UUID;
-  std::string s_uuid;
-  if(vars.Get("UUID",s_uuid)){
-    m_UUID = boost::uuids::string_generator{}(s_uuid);
-  } else {
-    m_UUID = boost::uuids::random_generator()();
-  }
 
-  int pubsec = 5;
-  int kicksec = 60;
+#include <cstdio>
 
-  vars.Get("service_publish_sec", pubsec);
-  vars.Get("service_kick_sec", kicksec);
+boost::uuids::uuid m_UUID;
+std::string s_uuid;
 
-  bool send = (pubsec>=0);
-  bool receive = (kicksec>=0);
-  int remote_port = 60000;
-
-  vars.Get("sc_port", remote_port);
-  
-  std::vector<std::string> mc_addresses;  
-  std::vector<int> mc_ports;
-
-  if(!vars.Get("service_discovery_address",mc_addresses)){
-    std::string tmp_address="";
-    if(vars.Get("service_discovery_address",tmp_address)) mc_addresses.emplace_back(tmp_address);
-    else  mc_addresses.emplace_back("239.192.1.1");
-  }
-  if(!vars.Get("service_discovery_port",mc_ports)){
-    int tmp_port=0;
-    if(vars.Get("service_discovery_port",tmp_port)) mc_ports.emplace_back(tmp_port);
-    else mc_ports.emplace_back(5000);
-  }                  
-
-  if(context==0){
-    int iothreads = 1;
-    vars.Get("IO_Threads",iothreads);
-    
-    m_context = new zmq::context_t(iothreads);
-  }
-  else m_context = context;
-  
-  mp_SD = new ServiceDiscovery(send, receive, remote_port, mc_addresses, mc_ports , m_context,m_UUID, m_name, pubsec, kicksec);
-
-  
-  m_services= new Services();
-  m_services->Init(vars, m_context, &sc_vars, true);
-
+ if(vars.Get("UUID", s_uuid)){
+   m_UUID = boost::uuids::string_generator{}(s_uuid);
+ }
+ else{
+   std::string uuid_path;
+   if(vars.Get("UUID_path", uuid_path)){
+     FILE* fp = fopen(uuid_path.c_str(), "rb");
+     
+     if (fp){
+       // UUID file exists; read it.
+       if (fread(&m_UUID, sizeof(m_UUID), 1, fp) != 1){
+	 // Read failed; generate a new UUID.
+	 m_UUID = boost::uuids::random_generator()();
+       }
+       
+       fclose(fp);
+     }
+     else{
+       // UUID file doesn't exist; generate and save one.
+       m_UUID = boost::uuids::random_generator()();
+       
+       fp = fopen(uuid_path.c_str(), "wb");
+       if (fp){
+	 fwrite(&m_UUID, sizeof(m_UUID), 1, fp);
+	 fclose(fp);
+       }
+     }
+   }
+   else {
+     // No UUID path specified; just generate one.
+     m_UUID = boost::uuids::random_generator()();
+   }
+ }
+ 
+ 
+ int pubsec = 5;
+ int kicksec = 60;
+ 
+ vars.Get("service_publish_sec", pubsec);
+ vars.Get("service_kick_sec", kicksec);
+ 
+ bool send = (pubsec>=0);
+ bool receive = (kicksec>=0);
+ int remote_port = 60000;
+ 
+ vars.Get("sc_port", remote_port);
+ 
+ std::vector<std::string> mc_addresses;  
+ std::vector<int> mc_ports;
+ 
+ if(!vars.Get("service_discovery_address",mc_addresses)){
+   std::string tmp_address="";
+   if(vars.Get("service_discovery_address",tmp_address)) mc_addresses.emplace_back(tmp_address);
+   else  mc_addresses.emplace_back("239.192.1.1");
+ }
+ if(!vars.Get("service_discovery_port",mc_ports)){
+   int tmp_port=0;
+   if(vars.Get("service_discovery_port",tmp_port)) mc_ports.emplace_back(tmp_port);
+   else mc_ports.emplace_back(5000);
+ }                  
+ 
+ if(context==0){
+   int iothreads = 1;
+   vars.Get("zmq_io_threads",iothreads);
+   
+   m_context = new zmq::context_t(iothreads);
+ }
+ else m_context = context;
+ 
+ mp_SD = new ServiceDiscovery(send, receive, remote_port, mc_addresses, mc_ports , m_context,m_UUID, m_name, pubsec, kicksec);
+ 
+ 
+ m_services= new Services();
+ m_services->Init(vars, m_context, &sc_vars, true);
+ 
 }
 
 DAQInterface::~DAQInterface(){
