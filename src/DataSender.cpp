@@ -142,29 +142,30 @@ void DataSender::Thread(Thread_args* arg){
   
   /////////////////////////// sending data //////////////////////
   args->send_error_counter=0;
-  for(size_t i=0; i < args->to_send.size(); i++){
-    if(args->send_error_counter<100){
-      if(args->to_send.front()->Send(args->sock,ZMQ_NOBLOCK)){ //no block or jsut use snd timeout?
-	args->to_send.front()->sent++;
-      }
+  while (!args->to_send.empty()){
+    DataMessages* data_messages = args->to_send.front();
+    
+    if (args->send_error_counter < 100){
+      if (data_messages->Send(args->sock, ZMQ_NOBLOCK)) data_messages->sent++;
       else{
-	args->to_send.front()->error++;
+	data_messages->error++;
 	args->send_error_counter++;
       }
     }
-    else args->to_send.front()->error++;
-    args->to_send.front()->time=std::chrono::steady_clock::now(); 
-    args->sent[*(reinterpret_cast<uint32_t*>(args->to_send.front()->messages.at(0).data()))]=args->to_send.front();
+    else{
+      data_messages->error++;
+    }
+    
+    data_messages->time = std::chrono::steady_clock::now();
+    args->sent[*reinterpret_cast<uint32_t*>(data_messages->messages[0].data())] = data_messages;
     args->to_send.pop_front();
   }
-  if(args->send_error_counter == 100) usleep(100);
-
   
-   
+  if (args->send_error_counter == 100) usleep(100);
+  
+} 
   ////////////////////////////////////////////////////////
-
   
-}
 
 
 bool DataSender::Add(void* data, size_t size, uint32_t coarse_counter, void(*del_func)(void*)){
