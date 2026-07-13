@@ -1,0 +1,41 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+
+  build_rocky-9:
+    runs-on: ubuntu-latest
+    container: 'tooldaq/core'
+    steps:
+    - uses: actions/checkout@v2
+    - name: setup
+      run: cp -R `pwd` /opt 
+       && cd /opt 
+       && ls 
+       && cd ToolFrameworkCore
+       && make clean
+       && git pull
+       && make -j `nproc --all`
+       && cd ../ToolDAQFramework
+       && cd /opt/ToolDAQFramework
+       && make clean
+       && make -j `nproc --all`
+
+    - name: make
+      run: cd /opt/libDAQInterface
+       && make clean
+       && make -j `nproc --all`
+     
+#    - name: test
+#      run: cd /opt/libDAQInterface
+#       && source Setup.sh
+#       && ./main
+
