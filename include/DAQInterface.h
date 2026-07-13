@@ -67,9 +67,16 @@ namespace ToolFramework {
     bool AlertSubscribe(std::string alert, std::function<bool(const char*, const char*)> function);
     bool AlertSend(std::string alert, std::string payload);
     
+    bool SetChangeConfigFunc(std::function<bool(std::string)>);
+    
     std::string PrintSlowControlVariables();
     std::string GetDeviceName();
     void SetVerbose(bool in);
+    
+    void SetActive(bool active);
+    void SetError(bool error);
+    void SetWarning(bool warn);
+    void ClearState();
     
     template<typename T> T GetSlowControlValue(std::string name){
       return sc_vars[name]->GetValue<T>();
