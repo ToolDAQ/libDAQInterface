@@ -17,4 +17,4 @@ RUN cd /opt \
     && source ./Setup.sh \
     && make clean \
     && make -j `nproc --all` \
-    && chmod -R a+rw /opt/webstreamer
+    && chmod -R a+rw /opt/libDAQInterface
