@@ -48,7 +48,7 @@ class DataSender{
   
  public:
   
-  DataSender(DAQInterface* interface , Store& vars, uint8_t in_card_type, uint16_t in_card_id);
+  DataSender(DAQInterface* interface, std::string config_file);
 
   bool LoadConfig(std::string json);
   bool LoadConfig(Store& vars);

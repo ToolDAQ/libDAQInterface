@@ -11,19 +11,19 @@ void DeleteHeader(void* data){
 
 }
 
-DataSender::DataSender(DAQInterface* interface, Store& vars, uint8_t in_card_type, uint16_t in_card_id){
+DataSender::DataSender(DAQInterface* interface, std::string config_file){
   
   args.daq_interface = interface;
   args.in_buffer = &in_buffer;
 
-  card_type = in_card_type;
-  card_id = in_card_id;
+  Store config;
+  config.Initialise(config_file);
 
-  if(!LoadConfig(vars)){
+  if(!LoadConfig(config)){
     std::cerr<<"Data socket missing configuration values"<<std::endl;
     args.daq_interface->SendLog("Data socket missing configuration values",LogLevel::Error);
   }
-
+  
   args.sock = new zmq::socket_t(*(interface->GetContext()), ZMQ_DEALER);
 
   args.in_items[0].socket=*(args.sock);
@@ -258,6 +258,9 @@ bool DataSender::LoadConfig(std::string json){
   ret = vars.Get("retry_limit", args.retry_limit) && ret;  
   ret = vars.Get("resend_period_ms", args.resend_period_ms) && ret;  
   ret = vars.Get("poll_period_ms", args.poll_period_ms) && ret;
+
+  ret = vars.Get("card_type", card_type) && ret;
+  ret = vars.Get("card_id", card_id) && ret;   
 
   args.num_data_messages = 0;
   args.num_data_akn = 0;

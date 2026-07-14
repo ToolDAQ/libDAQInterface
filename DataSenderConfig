@@ -1,4 +1,11 @@
 ########################## DataSender ################################
+data_port 8888			      # port to send data
+retry_limit 50			      # how many times to retry sending a message
+resend_period_ms 100		      # length of time between retries
+poll_period_ms 100		      # length of time to poll receive socket when no messages to send
+card_type 0    			      # card type [2bits]: ID board (00) ID/OD board (01), MPMT (10), calibration (11)
+card_id 2000			      # card id [12 bits]: unique id of electronics baord
+
 ZMQ_RCVHWM 1000		   	      # receive highj watermark
 ZMQ_SNDHWM 1			      # send high water mark
 ZMQ_LINGER 0			      # socket lingering after connection closed
@@ -11,7 +18,3 @@ ZMQ_TCP_KEEPALIVE_IDLE 5	      #	Override OS KEEPALIVE socket options
 ZMQ_TCP_KEEPALIVE_CNT 12	      # Override OS KEEPALIVE socket options
 ZMQ_TCP_KEEPALIVE_INTVL 5	      # Override OS KEEPALIVE socket options
 
-data_port 8888			      # port to send data
-retry_limit 50			      # how many times to retry sending a message
-resend_period_ms 100		      # length of time between retries
-poll_period_ms 100		      # length of time to poll receive socket when no messages to send

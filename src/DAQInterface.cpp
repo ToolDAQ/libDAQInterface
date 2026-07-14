@@ -414,3 +414,82 @@ bool DAQInterface::SetChangeConfigFunc(std::function<bool(std::string)> func){
   return allgood;
   
 }
+
+bool DAQInterface::SetRunStopFunc(std::function<bool()> func){
+  
+  // we'll make three things that call this function:
+  // 1. subscribe to alerts.
+  // 2. a BUTTON slow control.
+  // 3. a COMMAND slow control.
+  // However, the signatures here are different:
+  // Alert callbacks receive an alert name and payload, and return a bool.
+  // Slow controls receive a control name, and return a string.
+  // COMMANDs have an associated string variable in the SlowControlCollection, but buttons don't.
+  // The idea here is the Alert and BUTTON will retrieve their configuration from the LocalConfig member of
+  // the SlowControlCollection, while the COMMAND will get its configuration from the slow control variable.
+  // To align these we accept something whihc is none of these, and pass it whatever's appropriate.
+  bool allgood=true;
+  
+  // 1.
+  allgood = AlertSubscribe("RunStop", [this, func](const char*, const char*) -> bool{
+    return func();
+  });
+  
+  // 2.
+  allgood = allgood &&
+    sc_vars.Add("RunStop",  //here ben
+              BUTTON,
+              [this, func](const char*) -> std::string {
+                bool ok = func();
+                if(!ok) SetWarning(true);
+		sc_vars["Config"]->SetValue((int)ConfigState::Unconfigured);
+                return (ok ? "OK" : "Error");
+              },
+              0,
+              false); // this version will not be locked during non-testing runs,
+                      // since it only allows loading configurations in line with the current run type.
+  
+  // 3.
+  
+  return allgood;
+  
+}
+
+bool DAQInterface::SetExportConfigFunc(std::function<bool(std::string&)> func){
+  
+  // we'll make three things that call this function:
+  // 1. subscribe to alerts.
+  // 2. a BUTTON slow control.
+  // 3. a COMMAND slow control.
+  // However, the signatures here are different:
+  // Alert callbacks receive an alert name and payload, and return a bool.
+  // Slow controls receive a control name, and return a string.
+  // COMMANDs have an associated string variable in the SlowControlCollection, but buttons don't.
+  // The idea here is the Alert and BUTTON will retrieve their configuration from the LocalConfig member of
+  // the SlowControlCollection, while the COMMAND will get its configuration from the slow control variable.
+  // To align these we accept something whihc is none of these, and pass it whatever's appropriate.
+  bool allgood=true;
+  
+  // 1.
+  allgood = AlertSubscribe("ExportConfig", [this, func](const char*, const char*) -> bool{
+    return func(tmp_config);
+  });
+  
+  // 2.
+  allgood = allgood &&
+  sc_vars.Add("ExportConfig",
+              BUTTON,
+              [this, func](const char*) -> std::string {
+
+		bool ok = func(tmp_config);
+                if(!ok) SetWarning(true);
+              	return tmp_config;
+                },
+              0,
+              false); // this version will not be locked during non-testing runs,
+                      // since it only allows loading configurations in line with the current run type.
+  
+  
+  return allgood;
+  
+}

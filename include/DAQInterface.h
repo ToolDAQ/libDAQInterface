@@ -68,6 +68,8 @@ namespace ToolFramework {
     bool AlertSend(std::string alert, std::string payload);
     
     bool SetChangeConfigFunc(std::function<bool(std::string)>);
+    bool SetRunStopFunc(std::function<bool()>);
+    bool SetExportConfigFunc(std::function<bool(std::string&)>);
     
     std::string PrintSlowControlVariables();
     std::string GetDeviceName();
@@ -91,7 +93,7 @@ namespace ToolFramework {
     ServiceDiscovery* mp_SD;
     Store vars;
     std::string m_name;
-    
+    std::string tmp_config ="";   
     
   };
   
