@@ -168,7 +168,7 @@ void DataSender::Thread(Thread_args* arg){
   
 
 
-bool DataSender::Add(void* data, size_t size, uint32_t coarse_counter, void(*del_func)(void*)){
+bool DataSender::Add(void* data, size_t size, uint32_t coarse_counter, std::function<void(void*)> del_func){
 
   DataMessages* message = new DataMessages(); //use pool;
   DAQHeader* header = new DAQHeader(coarse_counter, message_num++);

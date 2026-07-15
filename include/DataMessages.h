@@ -7,6 +7,7 @@
 #include <chrono>
 #include <BinaryStream.h>
 #include <atomic>
+#include <functional>
 
 using namespace ToolFramework;
 
@@ -26,7 +27,7 @@ public:
   
   
   std::vector<zmq::message_t> messages;
-  std::vector<void (*)(void*)> delete_functions;
+  std::vector<std::function<void(void*)> > delete_functions;
   uint16_t sent = 0;
   uint16_t error = 0;
   std::chrono::steady_clock::time_point time;

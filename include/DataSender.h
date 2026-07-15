@@ -11,6 +11,7 @@
 #include <atomic>
 #include <Buffer.h>
 #include <DAQHeader.h>
+#include <functional>
 
 using namespace ToolFramework;
 
@@ -52,7 +53,7 @@ class DataSender{
 
   bool LoadConfig(std::string json);
   bool LoadConfig(Store& vars);
-  bool Add(void* data, size_t size, uint32_t coarse_counter, void(*del_func)(void*));
+  bool Add(void* data, size_t size, uint32_t coarse_counter, std::function<void(void*)> del_func);
   bool Add(DataMessages* message);
   
   std::string Summary();
