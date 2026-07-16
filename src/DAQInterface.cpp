@@ -369,7 +369,11 @@ bool DAQInterface::SetChangeConfigFunc(std::function<bool(std::string)> func){
   
   // 1.
   allgood = AlertSubscribe("ChangeConfig", [this, func](const char*, const char*) -> bool{
-    return func(m_services->GetLocalConfig());
+    if(func(m_services->GetLocalConfig())) return true;
+    SetWarning(true);
+    std::cerr<<"ChangeConfig Error"<<std::endl;
+    SendLog("ChangeConfig Error", LogLevel::Error);
+    return false;
   });
   
   // 2.
@@ -379,13 +383,16 @@ bool DAQInterface::SetChangeConfigFunc(std::function<bool(std::string)> func){
               [this, func](const char*) -> std::string {
                 sc_vars["Config"]->SetValue((int)ConfigState::ChangeStart);
                 bool ok = func(m_services->GetLocalConfig());
-                if(!ok) sc_vars["State"]->SetValue((int)State::Warning);
+                if(!ok){
+		  std::cerr<<"ChangeConfig Error"<<std::endl;
+		  SendLog("ChangeConfig Error", LogLevel::Error);
+		  SetWarning(true);
+		}
                 int new_state = ok ? (int)ConfigState::ChangeEnd : (int)ConfigState::ChangeFail;
                 sc_vars["Config"]->SetValue(new_state);
                 sc_vars["NewConfig"]->SetValue(0);
                 // FIXME dcsdue to a present bug in the webserver, if we leave a JSON value
                 // in a slow control, it will break the display of slow controls. :(
-                sc_vars["Config"]->SetValue<std::string>("");
                 return (ok ? "OK" : "Error");
               },
               0,
@@ -401,10 +408,13 @@ bool DAQInterface::SetChangeConfigFunc(std::function<bool(std::string)> func){
                 bool ok = func(sc_vars[name]->GetValue<std::string>());
                 int new_state = ok ? (int)ConfigState::ChangeEnd : (int)ConfigState::ChangeFail;
                 sc_vars["Config"]->SetValue(new_state);
-                if(!ok) sc_vars["State"]->SetValue((int)State::Warning);
+                if(!ok){
+		  SetWarning(true);
+		  std::cerr<<"ChangeConfig Error"<<std::endl;
+		  SendLog("ChangeConfig Error", LogLevel::Error);
+		}
                 // FIXME due to a present bug in the webserver, if we leave a JSON value
                 // in a slow control, it will break the display of slow controls. :(
-                sc_vars["Config"]->SetValue<std::string>("");
                 return (ok ? "OK" : "Error");
               },
               0,
@@ -432,7 +442,11 @@ bool DAQInterface::SetRunStopFunc(std::function<bool()> func){
   
   // 1.
   allgood = AlertSubscribe("RunStop", [this, func](const char*, const char*) -> bool{
-    return func();
+    if(func()) return true;
+    SetWarning(true);
+    std::cerr<<"RunStop Error"<<std::endl;
+    SendLog("RunStop Error", LogLevel::Error);
+    return false;
   });
   
   // 2.
@@ -441,7 +455,11 @@ bool DAQInterface::SetRunStopFunc(std::function<bool()> func){
               BUTTON,
               [this, func](const char*) -> std::string {
                 bool ok = func();
-                if(!ok) SetWarning(true);
+                if(!ok){
+		  SetWarning(true);
+		  std::cerr<<"RunStop Error"<<std::endl;
+		  SendLog("RunStop Error", LogLevel::Error);
+		}
 		sc_vars["Config"]->SetValue((int)ConfigState::Unconfigured);
                 return (ok ? "OK" : "Error");
               },
@@ -472,7 +490,11 @@ bool DAQInterface::SetExportConfigFunc(std::function<bool(std::string&)> func){
   
   // 1.
   allgood = AlertSubscribe("ExportConfig", [this, func](const char*, const char*) -> bool{
-    return func(tmp_config);
+    if(func(tmp_config)) return true;
+    SetWarning(true);
+    std::cerr<<"ExportConfig Error"<<std::endl;
+    SendLog("ExportConfig Error", LogLevel::Error);
+    return false;
   });
   
   // 2.
@@ -482,8 +504,12 @@ bool DAQInterface::SetExportConfigFunc(std::function<bool(std::string&)> func){
               [this, func](const char*) -> std::string {
 
 		bool ok = func(tmp_config);
-                if(!ok) SetWarning(true);
-              	return tmp_config;
+                if(!ok){
+		  SetWarning(true);
+		  std::cerr<<"ExportConfig Error"<<std::endl;
+		  SendLog("ExportConfig Error", LogLevel::Error);
+		}
+              	 return (ok ? tmp_config : "Error"); 
                 },
               0,
               false); // this version will not be locked during non-testing runs,
