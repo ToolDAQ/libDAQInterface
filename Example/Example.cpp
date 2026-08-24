@@ -37,20 +37,21 @@ class AutomatedFunctions {
     
   }
   
-  std::string voltage_change_func(const char* key){
+  std::string voltage_1_change_func(const char* new_value_string){
     
-    float new_value = DAQ_inter->sc_vars[key]->GetValue<float>();
+    float new_value = atof(new_value_string);
+    // < add code here to change the hardware value of 'voltage_1' to new_value >
+    std::string ret = "Changed channel 1 voltage to new setpoint "+std::to_string(new_value);
+    std::cout<<ret<<std::endl;
+    return ret;
     
-    if(strcmp(key,"voltage_1")==0){
-      // < add code here to change the hardware value of 'voltage_1' to new_value >
-    } else if(strcmp(key,"voltage_3")==0){
-      // < add code here to change the hardware value of 'voltage_3' to new_value >
-    } else {
-      std::string ret = std::string{"unknown key "}+key+" passed to callback 'voltage_change_func'";
-      return ret;
-    }
+  }
+  
+  std::string voltage_3_change_func(const char* new_value_string){
     
-    std::string ret = "Changed "+std::string{key}+ " to new setpoint "+std::to_string(new_value);
+    float new_value = atof(new_value_string);
+    // < add code here to change the hardware value of 'voltage_3' to new_value >
+    std::string ret = "Changed channel 3 voltage to new setpoint "+std::to_string(new_value);
     std::cout<<ret<<std::endl;
     return ret;
     
@@ -140,8 +141,8 @@ int main(){
   DAQ_inter.sc_vars["power_on"]->SetValue("0");
   if(verbose) std::cout<<"Done"<<std::endl;
   
-  if(verbose) std::cout<<"\tRegistering 'voltage_1' variable, linked to callback AutomatedFunctions::voltage_change_func ..."<<std::flush;
-  DAQ_inter.sc_vars.Add("voltage_1", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, &automated_functions,  std::placeholders::_1));  //example variable with automated function
+  if(verbose) std::cout<<"\tRegistering 'voltage_1' variable, linked to callback AutomatedFunctions::voltage_1_change_func ..."<<std::flush;
+  DAQ_inter.sc_vars.Add("voltage_1", VARIABLE,  std::bind(&AutomatedFunctions::voltage_1_change_func, &automated_functions,  std::placeholders::_1));  //example variable with automated function
   if(verbose) std::cout<<"Done\n\tConfiguring input range, step size and initial value..."<<std::flush;
   DAQ_inter.sc_vars["voltage_1"]->SetMin(0);
   DAQ_inter.sc_vars["voltage_1"]->SetMax(5000);
@@ -158,10 +159,10 @@ int main(){
   DAQ_inter.sc_vars["voltage_2"]->SetValue(4000);
   if(verbose) std::cout<<"Done"<<std::endl;
   
-  if(verbose) std::cout<<"\tRegistering 'voltage_3' variable, linked to callback 'AutomatedFunctions::voltage_change_func' ..."<<std::flush;
+  if(verbose) std::cout<<"\tRegistering 'voltage_3' variable, linked to callback 'AutomatedFunctions::voltage_3_change_func' ..."<<std::flush;
   // note that we can bind the same callback function to multiple slow controls.
   // The callback function receives a key to tell you which control was changed.
-  DAQ_inter.sc_vars.Add("voltage_3", VARIABLE,  std::bind(&AutomatedFunctions::voltage_change_func, &automated_functions,  std::placeholders::_1));
+  DAQ_inter.sc_vars.Add("voltage_3", VARIABLE,  std::bind(&AutomatedFunctions::voltage_3_change_func, &automated_functions,  std::placeholders::_1));
   if(verbose) std::cout<<"Done\n\tConfiguring input range, step size and initial value..."<<std::flush;
   DAQ_inter.sc_vars["voltage_3"]->SetMin(0);
   DAQ_inter.sc_vars["voltage_3"]->SetMax(5000);

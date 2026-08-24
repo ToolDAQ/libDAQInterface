@@ -48,7 +48,7 @@ int main(){
 	
 	// to be able to send a device config we need to have a corresponding device.
 	// libDAQInterface doesn't provide a function to create a device, but we can do it manually
-	ok = DAQ_inter.SQLQuery("INSERT INTO devices ( name ) VALUES ( '"+device_name+"' ) ON CONFLICT DO NOTHING",tmp);
+	ok = DAQ_inter.SQLQuery("INSERT INTO devices ( name, author_id ) VALUES ( '"+device_name+"', 1 ) ON CONFLICT DO NOTHING",tmp);
 	if(!ok) std::cout<<Check(ok)<<"Error inserting test device: "<<tmp<<Reset<<std::endl;
 	
 	// these may fail if the above failed... but we don't expect it to...
