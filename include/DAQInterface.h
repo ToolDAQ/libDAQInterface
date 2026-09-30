@@ -26,7 +26,7 @@ namespace ToolFramework {
     
   public:
     
-    DAQInterface(std::string configuration_file, zmq::context_t* context=0);
+    DAQInterface(std::string configuration_file, zmq::context_t* context=0, const char* device_name=nullptr);
     ~DAQInterface();
     
     bool SQLQuery(const std::string& query, std::vector<std::string>& responses, const unsigned int timeout=default_timeout);
