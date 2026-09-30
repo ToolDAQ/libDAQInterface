@@ -3,13 +3,14 @@
 
 using namespace ToolFramework;
 
-DAQInterface::DAQInterface(std::string configuration_file, zmq::context_t* context){
+DAQInterface::DAQInterface(std::string configuration_file, zmq::context_t* context, const char* device_name){
   
   if(!vars.Initialise(configuration_file)){
     std::clog<<"Error invalid configuration file given to DAQ Interface: "<<configuration_file<<std::endl;
   }
   
   if(!vars.Get("device_name",m_name)) m_name = "unnamed";
+  if(device_name!=nullptr) m_name=device_name;
   vars.Set("service_name",m_name);
   
   boost::uuids::uuid m_UUID;
