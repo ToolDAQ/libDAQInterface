@@ -29,7 +29,7 @@ int main(){
 	if(!ok || verbose) std::cout<<"Send Log: "<<Check(ok)<<Reset<<std::endl;
 	
 	if(verbose) std::cout<<"Testing monitoring..."<<std::flush;
-	ok = DAQ_inter.SendMonitoringData("{\"message\":\"test mon message\"}","general");
+	ok = DAQ_inter.SendMonitoringData("{\"message\":\"test mon message\"}","libdaq_test");
 	if(!ok || verbose) std::cout<<"Send monitoring: "<<Check(ok)<<Reset<<std::endl;
 	
 	if(verbose) std::cout<<"Sending test alarm..."<<std::flush;
@@ -53,8 +53,8 @@ int main(){
 	
 	// these may fail if the above failed... but we don't expect it to...
 	if(verbose) std::cout<<"Sending test device configs..."<<std::flush;
-	ok = DAQ_inter.SendDeviceConfig("{\"device settings\":[3,2,1]}","test user","test dev config");
-	ok = ok && DAQ_inter.SendDeviceConfig("{\"device settings\":[5,6,7]}","test user","test dev config");
+	ok = DAQ_inter.SendDeviceConfig("{\"device settings\":[3,2,1]}",1,"test dev config");
+	ok = ok && DAQ_inter.SendDeviceConfig("{\"device settings\":[5,6,7]}",1,"test dev config");
 	if(!ok || verbose) std::cout<<"Send device config: "<<Check(ok)<<Reset<<std::endl;
 	
 	if(verbose) std::cout<<"Getting test device config..."<<std::flush;
@@ -74,7 +74,7 @@ int main(){
 	Store mystore;
 	try {
 		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM base_config WHERE name='"+device_name+"' AND version=0 ) THEN "
-		        "INSERT INTO base_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":0}' ); "
+		        "INSERT INTO base_config ( name, author_id, description, data ) values ( '"+device_name+"', 1, 'test', '{\""+device_name+"\":0}' ); "
 		        "END IF; END $$ ";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(!ok) std::cerr<<"error inserting base config"<<std::endl;
@@ -89,7 +89,7 @@ int main(){
 			std::cerr<<"error fetching base_config_id"<<std::endl;
 		}
 		query = "DO $$ BEGIN IF NOT EXISTS ( SELECT name FROM runmode_config WHERE name='"+device_name+"' AND version=0 ) THEN "
-		        "INSERT INTO runmode_config ( name, author, description, data ) values ( '"+device_name+"', 'test', 'test', '{\""+device_name+"\":1}' ); "
+		        "INSERT INTO runmode_config ( name, author_id, description, data ) values ( '"+device_name+"', 1, 'test', '{\""+device_name+"\":1}' ); "
 		        "END IF; END $$ ";
 		ok = DAQ_inter.SQLQuery(query,tmp);
 		if(!ok) std::cerr<<"error inserting runmode config"<<std::endl;
@@ -144,15 +144,16 @@ int main(){
 	// requires either ROOT install, or hard-coded json that may not be small, or a test file
 	
 	if(verbose) std::cout<<"Testing single-record SQL query"<<Reset<<std::endl;
-	ok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 1",tmp);
-	ok = ok && (tmp=="test log message");
+	ok = DAQ_inter.SQLQuery("SELECT data FROM monitoring WHERE subject='libdaq_test' ORDER BY time DESC LIMIT 1",tmp);
+	ok = ok && (tmp=="{\"data\":{\"message\":\"test mon message\"}}");
 	if(!ok || verbose) std::cout<<"Get single record via SQL: "<<Check(ok)<<" = "<<tmp<<Reset<<std::endl;
 	
 	if(verbose) std::cout<<"Testing multi-record SQL query"<<Reset<<std::endl;
 	// make sure we have >1 entries to select
-	ok = DAQ_inter.SendLog("second test log message");
+	ok = DAQ_inter.SendLog("second test mon message");
+	ok = DAQ_inter.SendMonitoringData("{\"message\":\"second test message\"}","libdaq_test");
 	std::vector<std::string> resps;
-	ok = DAQ_inter.SQLQuery("SELECT time, message FROM logging ORDER BY time DESC LIMIT 2",resps);
+	ok = DAQ_inter.SQLQuery("SELECT time, data FROM monitoring WHERE subject='libdaq_test' LIMIT 2",resps);
 	ok = ok && (resps.size()==2);
 	if(!ok || verbose) std::cout<<"Get multiple records via SQL: "<<Check(ok)<<", got "<<resps.size()<<" rows"<<std::endl;
 	if(ok && verbose){

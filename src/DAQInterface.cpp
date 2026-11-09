@@ -134,9 +134,9 @@ bool DAQInterface::SendCalibrationData(const std::string& json_data, const std::
   
 }
 
-bool DAQInterface::SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device, const uint64_t timestamp, int* version, const unsigned int timeout){
+bool DAQInterface::SendDeviceConfig(const std::string& json_data, const uint32_t author_id, const std::string& description, const std::string& device, const uint64_t timestamp, int* version, const unsigned int timeout){
   
-  return m_services->SendDeviceConfig(json_data, author, description, device, timestamp, version, timeout);
+  return m_services->SendDeviceConfig(json_data, author_id, description, device, timestamp, version, timeout);
   
 }
 
