@@ -1,7 +1,8 @@
 ############################ DAQ Interface ############################
-UUID b16a0186-c5df-474c-b880-9fc6c0670d7d   # unique identifier for client (must be valid uuid)
+#UUID b16a0186-c5df-474c-b880-9fc6c0670d7d   # unique identifier for client (must be valid uuid)
 UUID_path ./UUID                            # if no uuid is specified one is generated one first execution, saved at the path specified and reused
 device_name Example                         # name of devices
+device_id_path ./deviceID                   # device name to IDs; if not present will be looked up via database and saved to this file
 sc_port 6001                                # local port to use for slow control
 zmq_io_threads 1                            # number of io threadws for zmwq context
 

@@ -39,7 +39,7 @@ namespace ToolFramework {
     bool SendCalibrationData(const std::string& json_data, const std::string& description, const std::string& device="", const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
     bool GetCalibrationData(std::string& json_data, int& version, const std::string& device="", const unsigned int timeout=default_timeout);
     bool GetCalibrationData(std::string& json_data, int&& version=-1, const std::string& device="", const unsigned int timeout=default_timeout);
-    bool SendDeviceConfig(const std::string& json_data, const std::string& author, const std::string& description, const std::string& device="", const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
+    bool SendDeviceConfig(const std::string& json_data, const uint32_t author_id, const std::string& description, const std::string& device="", const uint64_t timestamp=0, int* version=nullptr, const unsigned int timeout=default_timeout);
     bool GetDeviceConfig(std::string& json_data, const int version, const std::string& device="", const unsigned int timeout=default_timeout);
     bool GetRunConfig(std::string& json_data, const int base_config_id, const int runmode_config_id, const unsigned int timeout=default_timeout);
     bool GetRunModeConfig(std::string& json_data, const std::string& name, const int version, const unsigned int timeout=default_timeout);

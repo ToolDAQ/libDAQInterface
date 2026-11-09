@@ -214,7 +214,7 @@ int main(){
     configuration>>config_json; //output current configuration to json
     
     if(verbose) std::cout<<"sending configuration json '"<<config_json<<"' to database"<<std::endl;
-    DAQ_inter.SendDeviceConfig(config_json, "John Doe", "My New Config"); //uplaod configuration to database
+    DAQ_inter.SendDeviceConfig(config_json, 1, "My New Config"); //uplaod configuration to database
     
   } else{
     
